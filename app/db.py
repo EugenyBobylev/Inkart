@@ -18,7 +18,7 @@ class Doctor(Base):
     phone = Column("phone", Integer)
     # avatar
     region_id = Column("region_id", Integer)
-    country_id = Column("region_id", Integer)
+    country_id = Column("country_id", Integer)
     first_client_message = Column("first_client_message", DateTime)
     last_client_message = Column("last_client_message", DateTime)
     extra_comment_1 = Column("extra_comment_1", String(512))
