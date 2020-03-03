@@ -1,8 +1,8 @@
-from typing import NamedTuple
+from typing import NamedTuple, List
 import requests
 import json
 
-from app.repo import add_doctor
+from app.repo import add_doctor, get_dictors_id
 
 token = '456c1286ccf71bfcd1bda342d92a70'
 
@@ -52,8 +52,8 @@ def get_api_channels() -> object:
 
 
 # chat2client api all clients (GET)
-def get_api_all_clients() -> object:
-    url = "https://api.chat2desk.com/v1/clients?limit=200&offset=400"
+def get_api_all_clients(offset=0) -> object:
+    url = f"https://api.chat2desk.com/v1/clients?offset={offset}"
     payload = {}
     headers = {'Authorization': token}
 
@@ -141,19 +141,53 @@ def load_data_json():
     return __data__
 
 
-data = None
+def is_continue(result) -> bool:
+    meta: dict = result['meta']
+    is_continue: bool = result['status'] == 'success' and \
+                        meta['offset'] < meta['total']
+    return is_continue
+
+
+def sync_client_with_db(client_id: int) -> bool:
+    ok = False
+    data = get_api_clients(client_id)  # запросить всю инф. по клиенту, включая каналы (нам нужен канала whatsapp)
+    data = data['data']
+    whatsapp_ok: bool = '19286' in str(data)
+    if whatsapp_ok:
+        res = add_doctor(data)
+        ok = res['ok']
+    return ok
+
+
+def sync_clients_with_db() -> None:
+    doctors_id: List = get_dictors_id() # id докторов из БД
+    offset = 0
+    result = get_api_all_clients(offset)   # все клиенты из chat2desk (20 записей в странице
+    while is_continue(result):
+        meta = result['meta']
+        offset += meta['limit']
+        all_clients = result['data']
+        for client_data in all_clients:
+            client_id = client_data['id']
+            if client_id in doctors_id:
+                continue
+            sync_client_with_db(client_id)  # выполнить синхронизацию
+        result = get_api_all_clients(offset)
+
 # data = get_api_modes()
 # data = get_api_transports()
-# data = get_api_all_clients()
 # data = get_api_channels()
 # data = post_api_client(phone=79246432292 ,nick='OlgaOh')
 # data = put_api_clients(client_id=96881373, client_data={"name": "EugenyBobylev"}) # EvgenyBobylev
-val = put_api_clients(client_id=105582161, client_data={"name": "OlgaOh", "comment": "Ольга Владимировна Охманюк"}) # OlgaOh
-val = get_api_clients(client_id=105582161)
-# val = get_api_clients_phone(79247401790)
+# val = put_api_clients(client_id=105582161, client_data={"name": "OlgaOh", "comment": "Ольга Владимировна Охманюк"}) # OlgaOh
+# val = get_api_clients(client_id=105582161)
+#val = get_api_clients_phone(79247401790)
 # val = post_api_message(client_id=105582161, message='Здравствуйте Ольга Владимировна!')
 # chanel_id = 19286
-# print(val)
+# whatsapp_ok = ('19286' in str(val))
+# print(whatsapp_ok)
+#print(result)
 
-result: dict = add_doctor(val['data'])
-print(f"Результат добавления в БД ok={result['ok']}")
+
+# result: dict = add_doctor(data)
+# print(f"Результат добавления в БД ok={result['ok']}")

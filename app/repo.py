@@ -1,6 +1,6 @@
 from datetime import datetime
 from dateutil.tz import tz
-from typing import Dict
+from typing import Dict, List
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
@@ -72,3 +72,11 @@ def del_doctor(id: int) -> None:
         session.delete(doctor)
         ok = session_commit()
     return ok
+
+
+def get_dictors_id() -> List[int]:
+    result = session.query(Doctor.id).all()
+    lst = list()
+    for item in result:
+        lst.append(item.id)
+    return lst
