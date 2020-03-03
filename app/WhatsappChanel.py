@@ -153,7 +153,7 @@ val = get_api_clients(client_id=105582161)
 # val = get_api_clients_phone(79247401790)
 # val = post_api_message(client_id=105582161, message='Здравствуйте Ольга Владимировна!')
 # chanel_id = 19286
-print(val)
+# print(val)
 
-#result: NamedTuple[bool, object] = add_doctor(val['data'])
-#print(f"Результат добавления в БД ok={result.ok}")
+result: dict = add_doctor(val['data'])
+print(f"Результат добавления в БД ok={result['ok']}")
