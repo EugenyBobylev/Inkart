@@ -181,13 +181,6 @@ def sync_clients_with_db() -> None:
 # data = put_api_clients(client_id=96881373, client_data={"name": "EugenyBobylev"}) # EvgenyBobylev
 # val = put_api_clients(client_id=105582161, client_data={"name": "OlgaOh", "comment": "Ольга Владимировна Охманюк"}) # OlgaOh
 # val = get_api_clients(client_id=105582161)
-#val = get_api_clients_phone(79247401790)
+# val = get_api_clients_phone(79247401790)
 # val = post_api_message(client_id=105582161, message='Здравствуйте Ольга Владимировна!')
 # chanel_id = 19286
-# whatsapp_ok = ('19286' in str(val))
-# print(whatsapp_ok)
-#print(result)
-
-
-# result: dict = add_doctor(data)
-# print(f"Результат добавления в БД ok={result['ok']}")
