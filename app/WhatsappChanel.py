@@ -155,7 +155,6 @@ def sync_client_with_db(client_id: int) -> None:
     data = data['data']
     whatsapp_ok: bool = '19286' in str(data)
     if whatsapp_ok:
-        print('ok_data')
         whatsapp_data.append(data)
 
 
