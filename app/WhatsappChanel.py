@@ -1,11 +1,12 @@
-from typing import NamedTuple, List
-import requests
+from typing import NamedTuple, List, Dict
 import json
+import threading
+import requests
 
 from app.repo import add_doctor, get_dictors_id
 
 token = '456c1286ccf71bfcd1bda342d92a70'
-
+whatsapp_data: List[Dict] = []  # список словарей содержащих данные клиентов из whatsapp channel
 
 # chat2desk api info
 def get_info() -> object:
@@ -148,21 +149,21 @@ def is_continue(result) -> bool:
     return is_continue
 
 
-def sync_client_with_db(client_id: int) -> bool:
+def sync_client_with_db(client_id: int) -> None:
     ok = False
     data = get_api_clients(client_id)  # запросить всю инф. по клиенту, включая каналы (нам нужен канала whatsapp)
     data = data['data']
     whatsapp_ok: bool = '19286' in str(data)
     if whatsapp_ok:
-        res = add_doctor(data)
-        ok = res['ok']
-    return ok
+        print('ok_data')
+        whatsapp_data.append(data)
 
 
 def sync_clients_with_db() -> None:
-    doctors_id: List = get_dictors_id() # id докторов из БД
+    doctors_id: List = get_dictors_id()  # id докторов из БД
+    threads = []    # потоки асинхронной обработки
     offset = 0
-    result = get_api_all_clients(offset)   # все клиенты из chat2desk (20 записей в странице
+    result = get_api_all_clients(offset)  # все клиенты из chat2desk (20 записей в странице
     while is_continue(result):
         meta = result['meta']
         offset += meta['limit']
@@ -171,8 +172,22 @@ def sync_clients_with_db() -> None:
             client_id = client_data['id']
             if client_id in doctors_id:
                 continue
-            sync_client_with_db(client_id)  # выполнить синхронизацию
+            # prepare threads
+            threads.append(threading.Thread(target=sync_client_with_db, args=(client_id,)))
+            # sync_client_with_db(client_id)  # выполнить синхронизацию
+        # start
+        for thread in threads:
+            if thread.native_id is None:
+                thread.start()
         result = get_api_all_clients(offset)
+
+    # finish
+    for thread in threads:
+        thread.join()
+    for data in whatsapp_data:
+        add_doctor(data)
+    whatsapp_data.clear()
+
 
 # data = get_api_modes()
 # data = get_api_transports()
@@ -184,3 +199,4 @@ def sync_clients_with_db() -> None:
 # val = get_api_clients_phone(79247401790)
 # val = post_api_message(client_id=105582161, message='Здравствуйте Ольга Владимировна!')
 # chanel_id = 19286
+sync_clients_with_db()
