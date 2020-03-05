@@ -161,21 +161,21 @@ def send_gmail(service, user_id, body: MIMEMultipart):
 
 
 if __name__ == '__main__':
-    send_to = 'beabooks@mail.ru'
-    subject = "Проверка отсылки письма с вложением или без вложения"
+    # send_to = 'beabooks@mail.ru'
+    # subject = "Проверка отсылки письма с вложением или без вложения"
     message = """
 Это электронное письмо было послано самому себе в исключительно отладочных целях.
 Оно может содержать какие-либо вложения как-то: двоичные файлы, изображения и т.д.
 PS. Отправка письма возможно была сделана через gmail api
 """
-    mail_msg = create_mail('inkartpro@gmail.com', send_to, subject, message)
+    # mail_msg = create_mail('inkartpro@gmail.com', send_to, subject, message)
     # attach = 'ТехнЗадание_на_xls.docx'
     # msg_attach = get_attach_mime(attach)
     # ail_msg.attach(msg_attach)
-    #msg_image = get_attach_mime('МоеФото.jpg')
-    #mail_msg.attach(msg_image)
-    srv = get_service()
-    send_gmail(srv, 'me', mail_msg)
+    # msg_image = get_attach_mime('МоеФото.jpg')
+    # mail_msg.attach(msg_image)
+    # srv = get_service()
+    # send_gmail(srv, 'me', mail_msg)
     # get_all_income_emails(srv)
 
     # email_id = '16fe94817cda70f1'
