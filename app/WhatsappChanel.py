@@ -198,4 +198,4 @@ def sync_clients_with_db() -> None:
 # val = get_api_clients_phone(79247401790)
 # val = post_api_message(client_id=105582161, message='Здравствуйте Ольга Владимировна!')
 # chanel_id = 19286
-sync_clients_with_db()
+# sync_clients_with_db()
