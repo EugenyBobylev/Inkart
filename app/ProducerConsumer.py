@@ -6,6 +6,7 @@ from random import random
 
 SENTINEL = object()
 
+
 class Pipeline:
     """Class to allow a single element pipeline between producer and consumer.
     """

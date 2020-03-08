@@ -8,6 +8,7 @@ from app.repo import add_doctor, get_dictors_id
 token = '456c1286ccf71bfcd1bda342d92a70'
 whatsapp_data: List[Dict] = []  # список словарей содержащих данные клиентов из whatsapp channel
 
+
 # chat2desk api info
 def get_info() -> object:
     url = "https://api.chat2desk.com/v1/companies/api_info"

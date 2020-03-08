@@ -1,6 +1,7 @@
 from __future__ import print_function
 import base64
 import email
+import logging
 import mimetypes
 import pickle
 import os.path
@@ -20,8 +21,8 @@ from google.auth.transport.requests import Request
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/gmail.modify',
-          'https://www.googleapis.com/auth/gmail.send',
-          'https://www.googleapis.com/auth/drive.metadata.readonly']
+          'https://www.googleapis.com/auth/gmail.send'
+          ]
 
 
 def get_message(service, user_id, msg_id):
@@ -174,6 +175,8 @@ PS. Отправка письма возможно была сделана че�
     # ail_msg.attach(msg_attach)
     # msg_image = get_attach_mime('МоеФото.jpg')
     # mail_msg.attach(msg_image)
+    # format = "%(asctime)s: %(message)s"
+    # logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
     # srv = get_service()
     # send_gmail(srv, 'me', mail_msg)
     # get_all_income_emails(srv)
