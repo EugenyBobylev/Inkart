@@ -1,4 +1,5 @@
 import logging
+import queue
 import time
 from timeloop import Timeloop
 from datetime import timedelta
@@ -8,6 +9,7 @@ from app.WhatsappChanel import post_api_message
 from app.model import GmailMessage
 
 tl = Timeloop()
+gmail_queue = queue()
 
 
 @tl.job(interval=timedelta(seconds=15))
@@ -18,14 +20,23 @@ def check_new_email():
     if count < 1:
         logging.info(f"You have no new email messages {time.ctime()}")
     else:
-        whatsapp_msg = f"You have {count} new unread email messages {time.ctime()}"
-        logging.info(whatsapp_msg)
-        post_api_message(client_id=96881373, message=whatsapp_msg)
         for message in new_messages:
-            logging.info(f"id={message['id']}; dody='{message['snippet']}'")
+            gmail_msg = GmailMessage.from_json(msg)
+            logging.info(f"{gmail_msg}")
+            gmail_queue.put(gmail_msg)
             # mark e-mail message as readed
             labels = {"removeLabelIds":  ['UNREAD'], "addLabelIds": []}
             modify_message(srv, "me", message["id"], labels)
+
+
+@tl.job(interval=timedelta(seconds=1))
+def check_gmail_queue():
+    if not gmail_queue.empty():
+        gmail_msg: GmailMessage = gmail_queue.get()
+        whatsapp_msg = f"You have new unread email messages {gmail_msg.snippet } {time.ctime()}"
+        logging.info(whatsapp_msg)
+        post_api_message(client_id=96881373, message=whatsapp_msg)
+
 
 
 def send_whatsapp_message(msg):
