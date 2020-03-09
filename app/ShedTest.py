@@ -40,7 +40,7 @@ def start_canceling():
     t = threading.Thread(target=scheduler.run)
     t.start()
     # Back in the main thread, cancel the first scheduled event.
-    scheduler.cancel(e1)
+    scheduler.cancel(e2)
     # Wait for the scheduler to finish running in the thread
     t.join()
 
