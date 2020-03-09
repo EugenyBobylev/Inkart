@@ -43,7 +43,7 @@ def to_local_datetime(dt: datetime) -> datetime:
     return local_dt
 
 
-def add_doctor(data:Dict[str, object]) -> dict:
+def add_doctor(data: Dict[str, object]) -> dict:
     doctor: Doctor = Doctor()
     for key in data:
         if hasattr(doctor, key):
