@@ -23,7 +23,7 @@ def check_new_email():
         for message in new_messages:
             logging.info(f"id={message['id']}; dody='{message['snippet']}'")
             # mark e-mail message as readed
-            labels = {"removeLabelIds":  ['UNREAD'],"addLabelIds": []}
+            labels = {"removeLabelIds":  ['UNREAD'], "addLabelIds": []}
             modify_message(srv, "me", message["id"], labels)
 
 
@@ -36,5 +36,5 @@ if __name__ == "__main__":
     format = "%(asctime)s: %(message)s"
     logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
     # send_whatsapp_message('От чего же я не нахожусь?!')
-    check_new_email()
-    # tl.start(block=True)
+    # check_new_email()
+    tl.start(block=True)

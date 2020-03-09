@@ -135,6 +135,32 @@ def post_api_message(client_id, message) -> object:
     return __data__
 
 
+def get_api_messages() -> object:
+    url = "https://api.chat2desk.com/v1/messages?channel_id'=19286&type=from_client&client_id=96881373&start_date=08-03-2020"
+
+    payload = {}
+    headers = {
+        'Authorization': token
+    }
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+    __data__ = json.loads(response.text)
+    return __data__
+
+
+def get_api_dialogs() -> object:
+    url = "https://api.chat2desk.com/v1/dialogs/?state=open"
+
+    payload = {}
+    headers = {
+        'Authorization': token
+    }
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+    __data__ = json.loads(response.text)
+    return __data__
+
+
 # load api info json from file
 def load_data_json():
     __data__ = None
@@ -198,5 +224,8 @@ def sync_clients_with_db() -> None:
 # val = get_api_clients(client_id=105582161)
 # val = get_api_clients_phone(79247401790)
 # val = post_api_message(client_id=105582161, message='Здравствуйте Ольга Владимировна!')
+# val = get_api_messages()
+# val = get_api_dialogs()
+# print(val)
 # chanel_id = 19286
 # sync_clients_with_db()
