@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import List
 
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
@@ -9,6 +10,7 @@ from config import Config
 db_uri = Config.SQLALCHEMY_DATABASE_URI;
 engine = create_engine(db_uri)
 Base = declarative_base()
+
 
 # данные об исполнителях из chat2desktop
 class Doctor(Base):
@@ -33,8 +35,20 @@ class Doctor(Base):
                f'assigned_name="{self.assigned_name}", comment={self.comment}'
 
 
+class AbstractMessage(object):
+    @classmethod
+    def from_json(cls, json_data):
+        msg = cls()
+        for key in json_data:
+            if hasattr(msg, key):
+                value = json_data[key]
+                setattr(msg, key, value)
+        return msg
+
+
+# chat2desk whatsapp messah=ge
 @dataclass
-class ChatMessage(object):
+class ChatMessage(AbstractMessage):
     id: int
     client_id: int
     text: str
@@ -56,11 +70,17 @@ class ChatMessage(object):
         self.operator_id = 0
         self.channel_id = 0
 
-    @classmethod
-    def from_json(cls, json_data):
-        msg = ChatMessage()
-        for key in json_data:
-            if hasattr(msg, key):
-                value = json_data[key]
-                setattr(msg, key, value)
-        return msg
+
+# gfmail message
+@dataclass()
+class GmailMessage(AbstractMessage):
+    id: str
+    trhreadId: str
+    labelIds: List[str]
+    snippet: str
+
+    def __init__(self):
+        self.id = 0
+        self.trhreadId = ''
+        self.labelIds = []
+        self.snippet = ''

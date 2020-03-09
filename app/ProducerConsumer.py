@@ -64,7 +64,7 @@ def consumer(pipeline):
 if __name__ == "__main__":
     format = "%(asctime)s: %(message)s"
     # logging.basicConfig(filename='sample.log', filemode='w', format=format, level=logging.INFO, datefmt="%H:%M:%S")
-    logging.basicConfig(format=format, level=logging.DEBUG, datefmt="%H:%M:%S")
+    logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
     pipeline = Pipeline()
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         executor.submit(producer, pipeline)

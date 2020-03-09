@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from app.GMailApi import get_service, get_all_unread_emails, modify_message
 from app.WhatsappChanel import post_api_message
+from app.model import GmailMessage
 
 tl = Timeloop()
 
@@ -34,7 +35,13 @@ def send_whatsapp_message(msg):
 
 if __name__ == "__main__":
     format = "%(asctime)s: %(message)s"
-    logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
+    logging.basicConfig(format=format, level=logging.CRITICAL, datefmt="%H:%M:%S")
+    srv = get_service()
+    new_messages = get_all_unread_emails(srv)
+    for msg in new_messages:
+        gmail_msg = GmailMessage.from_json(msg)
+        print(gmail_msg)
+    # print(new_messages)
     # send_whatsapp_message('От чего же я не нахожусь?!')
     # check_new_email()
-    tl.start(block=True)
+    # tl.start(block=True)
