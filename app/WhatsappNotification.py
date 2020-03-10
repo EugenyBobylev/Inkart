@@ -66,7 +66,7 @@ def find_doctor(job: InkartJob) -> None:
         return
     data = result["data"]
     logging.info(f"data= {data}")
-    job.request_id = data['id']
+    job.request_id = data['message_id']
     job.request_started = datetime.utcnow()
     job.request_time_estimate = job.request_started + timedelta(hours=1)
     # ждем подтверждения запроса
@@ -81,16 +81,16 @@ def confirm_request(job: InkartJob, candidat_id: int) -> None:
     now = datetime.utcnow()
     while now < job.request_time_estimate:
         val = get_api_messages(candidat_id, job.request_started)
-        data: List[Dict] = val["data"]
         status = val['status']
         if status != 'success':
             continue
+        data: List[Dict] = val["data"]
         for item in data:
             msg = ChatMessage.from_json(item)
             if msg.text == 'Да':
                 job.request_answer_id = msg.id
                 job.answered = datetime.utcnow()
-                break
+                return
         datetime.sleep(3.0)
 
 
@@ -98,12 +98,12 @@ def send_job(job: InkartJob) -> None:
     logging.info("run: send_job")
     msg = "Скачайте задание <тут адрес>\n" \
           "Ждем результат через 2 ч."
-    result = post_api_message(job.request_id, msg)
-    data = result["data"]
+    result = post_api_message(job.doctor_id, msg)
     status = result["status"]
     logging.info(f"={status}")
     if status != 'success':
         return
+    data = result["data"]
     job.job_start_id = data['id']
     job.job_started = datetime.utcnow()
     job.job_time_estimate = job.job_started + timedelta(hours=2, minutes=10)

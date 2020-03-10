@@ -142,7 +142,7 @@ def post_api_message(client_id, message) -> object:
 def get_api_messages(client_id, start_date=None) -> object:
     if start_date is None:
         start_date = date.today()
-    start_date = start_date.strftime("%d-%m-%Y")
+    start_date = start_date.strftime("%d-%m-%YT%H:%M:%S %Z")
     url = f"https://api.chat2desk.com/v1/messages?channel_id'=19286&type=from_client" \
           f"&client_id={client_id}&start_date={start_date}"
 
@@ -252,13 +252,14 @@ if __name__ == "__main__":
     # utc_now = current_now.astimezone(timezone.utc)
     # print(utc_now)
     # start_date = utc_now.strftime("%d-%m-%YT%H:%M:%S %Z")
-    # start_date = datetime(2020, 3, 8, 14, 0, 0, 0, tzinfo=timezone.utc).strftime("%d-%m-%YT%H:%M:%S %Z")
-    # print(start_date)
+    start_date = datetime(2020, 3, 10, 10, 40, 0, 0, tzinfo=timezone.utc) # .strftime("%d-%m-%YT%H:%M:%S %Z")
+    print(start_date)
+    start_date = datetime.utcnow()
+    val = get_api_messages(96881373,start_date)
 
-    # val = get_api_messages(96881373,start_date)
-    #val = get_api_message(message_id=360611360)
-    #val = get_api_all_clients(20)
-    val = post_api_message(96881373, 'Привет Евгений Александрович')
+    # val = get_api_message(message_id=360611360)
+    # val = get_api_all_clients(20)
+    # val = post_api_message(96881373, 'Привет Евгений Александрович')
     print(val)
     # val = {'data': [{'id': 359976315, 'text': 'Принимаю', 'coordinates': None, 'transport': 'whatsapp', 'type': 'from_client', 'read': 1, 'created': '2020-03-08T22:24:48 UTC', 'pdf': None, 'remote_id': None, 'recipient_status': None, 'ai_tips': None, 'dialog_id': 12667967, 'operator_id': 59750, 'channel_id': 19286, 'attachments': [], 'photo': None, 'video': None, 'audio': None, 'client_id': 96881373, 'extra_data': {}}], 'meta': {'total': 1, 'limit': 20, 'offset': 0}, 'status': 'success'}
     # json_data = val['data']
