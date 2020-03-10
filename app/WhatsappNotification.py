@@ -49,7 +49,7 @@ def send_whatsapp_message(msg):
 # предложить кандидата для выполнения работы
 def get_candidate() -> int:
     logging.info("run: get_candidate")
-    return 96881373  # Бобылев Е.А.
+    return 96881373  # Бобылев Е.А. 96881373
 
 
 def find_doctor(job: InkartJob) -> None:
@@ -59,12 +59,12 @@ def find_doctor(job: InkartJob) -> None:
     # send a request for processing the result
     msg = "Компания \"Инкарт\" предлагает Вам заказ на обработку результата исследования.\n" \
           "Если Вы готовы выполнить заказ, пришлите ответ со словом: Да."
-    result = post_api_message(job.request_id, msg)
-    data = result["data"]
+    result = post_api_message(candidat_id, msg)
     status = result["status"]
     logging.info(f"={status}")
     if status != 'success':
         return
+    data = result["data"]
     logging.info(f"data= {data}")
     job.request_id = data['id']
     job.request_started = datetime.utcnow()
@@ -77,6 +77,7 @@ def find_doctor(job: InkartJob) -> None:
 
 
 def confirm_request(job: InkartJob, candidat_id: int) -> None:
+    logging.info("run: confirm_request")
     now = datetime.utcnow()
     while now < job.request_time_estimate:
         val = get_api_messages(candidat_id, job.request_started)
@@ -90,7 +91,7 @@ def confirm_request(job: InkartJob, candidat_id: int) -> None:
                 job.request_answer_id = msg.id
                 job.answered = datetime.utcnow()
                 break
-        datetime.sleep(30.0)
+        datetime.sleep(3.0)
 
 
 def send_job(job: InkartJob) -> None:
@@ -111,10 +112,10 @@ def send_job(job: InkartJob) -> None:
 
 
 def wait_processing(job: InkartJob) -> None:
+    logging.info("run: wait_processing")
     now = datetime.utcnow()
     while now < job.job_time_estimate:
         val = get_api_messages(job.doctor_id, job.job_started)
-        datetime.sleep(30.0)
         data: List[Dict] = val["data"]
         status = val['status']
         if status != 'success':
@@ -124,15 +125,16 @@ def wait_processing(job: InkartJob) -> None:
             job.job_finish_id = msg.id
             job.job_finished = datetime.utcnow()
             break
+        datetime.sleep(3.0)
 
 
-def send_rejection(job:InkartJob) -> None:
+def send_rejection(job: InkartJob) -> None:
     logging.info("run: send_rejection")
     msg = "К сожалению мы вынуждены отменить выполнение Вами заказа."
     result = post_api_message(job.request_id, msg)
 
 
-def send_success(job:InkartJob) -> None:
+def send_success(job: InkartJob) -> None:
     logging.info("run: send_success")
     msg = "Подтверждаем выполнение заказа"
     result = post_api_message(job.request_id, msg)
@@ -163,4 +165,4 @@ if __name__ == "__main__":
     # candidat_id = 96881373
     # request_id = 360611360
     # created_str = '2020-03-10T05:08:04 UTC'
-    # tl.start(block=True)
+    tl.start(block=True)

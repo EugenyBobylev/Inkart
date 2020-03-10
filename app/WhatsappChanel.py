@@ -246,21 +246,23 @@ def sync_clients_with_db() -> None:
 # val = get_api_dialogs()
 
 if __name__ == "__main__":
-    tz = tzlocal()
-    current_now = datetime.now(tz)
-    print(current_now)
-    utc_now = current_now.astimezone(timezone.utc)
-    print(utc_now)
-    start_date = utc_now.strftime("%d-%m-%YT%H:%M:%S %Z")
-    start_date = datetime(2020, 3, 8, 14, 0, 0, 0, tzinfo=timezone.utc).strftime("%d-%m-%YT%H:%M:%S %Z")
+    # tz = tzlocal()
+    # current_now = datetime.now(tz)
+    # print(current_now)
+    # utc_now = current_now.astimezone(timezone.utc)
+    # print(utc_now)
+    # start_date = utc_now.strftime("%d-%m-%YT%H:%M:%S %Z")
+    # start_date = datetime(2020, 3, 8, 14, 0, 0, 0, tzinfo=timezone.utc).strftime("%d-%m-%YT%H:%M:%S %Z")
+    # print(start_date)
 
-    print(start_date)
     # val = get_api_messages(96881373,start_date)
-    val = get_api_message(message_id=360611360)
+    #val = get_api_message(message_id=360611360)
+    #val = get_api_all_clients(20)
+    val = post_api_message(96881373, 'Привет Евгений Александрович')
     print(val)
     # val = {'data': [{'id': 359976315, 'text': 'Принимаю', 'coordinates': None, 'transport': 'whatsapp', 'type': 'from_client', 'read': 1, 'created': '2020-03-08T22:24:48 UTC', 'pdf': None, 'remote_id': None, 'recipient_status': None, 'ai_tips': None, 'dialog_id': 12667967, 'operator_id': 59750, 'channel_id': 19286, 'attachments': [], 'photo': None, 'video': None, 'audio': None, 'client_id': 96881373, 'extra_data': {}}], 'meta': {'total': 1, 'limit': 20, 'offset': 0}, 'status': 'success'}
-    json_data = val['data']
-    chat_msg: ChatMessage = ChatMessage.from_json(json_data)
-    print(chat_msg)
+    # json_data = val['data']
+    # chat_msg: ChatMessage = ChatMessage.from_json(json_data)
+    # print(chat_msg)
     # chanel_id = 19286
     # sync_clients_with_db()

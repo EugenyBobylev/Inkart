@@ -116,7 +116,7 @@ class InkartJob(DataDict):
         self.created = datetime.utcnow()
         self.status = JobStatus.CREATED
         self.doctor_id = None
-        self.request_id = ''
+        self.request_id = None
         self.request_started = None
         self.request_time_estimate = None
         self.request_answer_id =None
