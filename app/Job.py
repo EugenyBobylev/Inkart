@@ -1,7 +1,16 @@
 import threading, time, signal
 from datetime import timedelta
+from enum import Enum
 
 WAIT_TIME_SECONDS = 3
+
+
+class JobStatus(Enum):
+    CREATED = 0,     # задание создано
+    SEARCH = 1       # поиск исполнителя
+    STARTED = 4,     # задание отравлено на расшифровку
+    FINISHED = 100,  # расшифровка задания завершена
+    CLOSED = 200     # задание закрыто
 
 
 class Job(threading.Thread):

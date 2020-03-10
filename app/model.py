@@ -5,6 +5,7 @@ from typing import List
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 
+from app.Job import JobStatus
 from config import Config
 
 db_uri = Config.SQLALCHEMY_DATABASE_URI;
@@ -35,7 +36,7 @@ class Doctor(Base):
                f'assigned_name="{self.assigned_name}", comment={self.comment}'
 
 
-class AbstractMessage(object):
+class DataDict(object):
     @classmethod
     def from_json(cls, json_data):
         msg = cls()
@@ -48,7 +49,7 @@ class AbstractMessage(object):
 
 # chat2desk whatsapp messah=ge
 @dataclass
-class ChatMessage(AbstractMessage):
+class ChatMessage(DataDict):
     id: int
     client_id: int
     text: str
@@ -73,7 +74,7 @@ class ChatMessage(AbstractMessage):
 
 # gfmail message
 @dataclass()
-class GmailMessage(AbstractMessage):
+class GmailMessage(DataDict):
     id: str
     trhreadId: str
     labelIds: List[str]
@@ -84,3 +85,39 @@ class GmailMessage(AbstractMessage):
         self.trhreadId = ''
         self.labelIds = []
         self.snippet = ''
+
+# Задание на обработку
+@dataclass()
+class InkartJob(DataDict):
+    id: str    # номер задания, id GmailMessage
+    created: datetime   # когда задание создано UTC
+    status: JobStatus   # статус задания
+    doctor_id: int      # исполнитель
+
+    request_id: int      # id whatsapp message запроса доктору на расшифровку
+    request_started: datetime  # метка времени UTC отправки запроса доктору на расшифровку
+    request_time_estimate: datetime  # метка времени UTC ожидания получения подтверждения от доктора
+    request_answer_id: int  # id whatsapp message получения согласия на расшифровку
+    answered: datetime  # метка времени UTC получения согласия на расшифровку
+
+    job_start_id: int  # id whatsapp message отправленного доктору с заданием нарасшифровку
+    job_started: datetime  # время отправки
+    job_time_estimate: datetime # Ожидаемое время окончания расшифровки
+
+    job_finish_id: int  # id whatsapp message с подтверждением окончания расшифровки
+    job_finished: datetime  # метка времени UTC с подтверждением окончания расшифровки
+    closed: datetime    # метка времени UTC закрытия задания
+
+    def __init__(self):
+        self.id = ''
+        self.created = datetime.utcnow()
+        self.status = JobStatus.CREATED
+        self.doctor_id = None
+        self.request_started = None
+        self.request_time_estimate = None
+        self.job_start_id = None
+        self.job_started = None
+        self.job_time_estimate = None
+        self.job_finish_id = None
+        self.job_finished = None
+        self.closed = None

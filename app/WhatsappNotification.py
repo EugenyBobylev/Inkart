@@ -38,7 +38,6 @@ def check_gmail_queue():
         post_api_message(client_id=96881373, message=whatsapp_msg)
 
 
-
 def send_whatsapp_message(msg):
     data = post_api_message(client_id=96881373, message=msg)
     logging.info(data)
