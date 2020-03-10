@@ -1,5 +1,6 @@
 import pytest
 
+from app.Job import JobStatus
 from app.model import InkartJob
 
 
@@ -8,7 +9,8 @@ def test_true():
 
 
 def test_inkart_job():
-    assert True
+    job = InkartJob()
+    assert job.status == JobStatus.CREATED
 
 
 def test_gmail_message():
