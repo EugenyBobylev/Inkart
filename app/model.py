@@ -86,6 +86,7 @@ class GmailMessage(DataDict):
         self.labelIds = []
         self.snippet = ''
 
+
 # Задание на обработку
 @dataclass()
 class InkartJob(DataDict):
