@@ -160,17 +160,7 @@ if __name__ == "__main__":
     # print(new_messages)
     # send_whatsapp_message('От чего же я не нахожусь?!')
     # check_new_email()
-    candidat_id = 96881373
-    request_id = 360611360
-    created_str = '2020-03-10T05:08:04 UTC'
-    start_date = dateutil.parser.parse(created_str)
-    finish_date = start_date + timedelta(hours=1, minutes=30)
-    print(start_date)
-    print(finish_date)
-    val = get_api_messages(candidat_id, start_date)
-    data: List[Dict] = val["data"]
-    for item in data:
-        msg = ChatMessage.from_json(item)
-        if msg.text == 'Да'
-    print(val)
+    # candidat_id = 96881373
+    # request_id = 360611360
+    # created_str = '2020-03-10T05:08:04 UTC'
     # tl.start(block=True)
