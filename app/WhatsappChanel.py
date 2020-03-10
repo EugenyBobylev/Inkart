@@ -141,10 +141,22 @@ def post_api_message(client_id, message) -> object:
 # chat2desk api get messages. Returns a list of accumulated messages (both from clients).
 def get_api_messages(client_id, start_date=None) -> object:
     if start_date is None:
-        start_date = date.today().strftime("%d-%m-%Y")
+        start_date = date.today()
+    start_date = start_date.strftime("%d-%m-%Y")
     url = f"https://api.chat2desk.com/v1/messages?channel_id'=19286&type=from_client" \
           f"&client_id={client_id}&start_date={start_date}"
 
+    payload = {}
+    headers = {
+        'Authorization': token
+    }
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+    __data__ = json.loads(response.text)
+    return __data__
+
+def get_api_message(message_id) -> object:
+    url = f"https://api.chat2desk.com/v1/messages/{message_id}"
     payload = {}
     headers = {
         'Authorization': token
@@ -244,8 +256,10 @@ if __name__ == "__main__":
 
     print(start_date)
     # val = get_api_messages(96881373,start_date)
-    val = {'data': [{'id': 359976315, 'text': 'Принимаю', 'coordinates': None, 'transport': 'whatsapp', 'type': 'from_client', 'read': 1, 'created': '2020-03-08T22:24:48 UTC', 'pdf': None, 'remote_id': None, 'recipient_status': None, 'ai_tips': None, 'dialog_id': 12667967, 'operator_id': 59750, 'channel_id': 19286, 'attachments': [], 'photo': None, 'video': None, 'audio': None, 'client_id': 96881373, 'extra_data': {}}], 'meta': {'total': 1, 'limit': 20, 'offset': 0}, 'status': 'success'}
-    json_data = val['data'][0]
+    val = get_api_message(message_id=360611360)
+    print(val)
+    # val = {'data': [{'id': 359976315, 'text': 'Принимаю', 'coordinates': None, 'transport': 'whatsapp', 'type': 'from_client', 'read': 1, 'created': '2020-03-08T22:24:48 UTC', 'pdf': None, 'remote_id': None, 'recipient_status': None, 'ai_tips': None, 'dialog_id': 12667967, 'operator_id': 59750, 'channel_id': 19286, 'attachments': [], 'photo': None, 'video': None, 'audio': None, 'client_id': 96881373, 'extra_data': {}}], 'meta': {'total': 1, 'limit': 20, 'offset': 0}, 'status': 'success'}
+    json_data = val['data']
     chat_msg: ChatMessage = ChatMessage.from_json(json_data)
     print(chat_msg)
     # chanel_id = 19286
