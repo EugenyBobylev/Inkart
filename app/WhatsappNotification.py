@@ -6,10 +6,10 @@ from datetime import timedelta
 
 from app.GMailApi import get_service, get_all_unread_emails, modify_message
 from app.WhatsappChanel import post_api_message
-from app.model import GmailMessage
+from app.model import GmailMessage, InkartJob
 
 tl = Timeloop()
-gmail_queue = queue()
+gmail_queue = queue.Queue()
 
 
 @tl.job(interval=timedelta(seconds=15))
@@ -50,7 +50,10 @@ if __name__ == "__main__":
     new_messages = get_all_unread_emails(srv)
     for msg in new_messages:
         gmail_msg = GmailMessage.from_json(msg)
+        job = InkartJob.from_json(msg)
         print(gmail_msg)
+        print('')
+        print(job)
     # print(new_messages)
     # send_whatsapp_message('От чего же я не нахожусь?!')
     # check_new_email()

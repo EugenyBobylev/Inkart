@@ -91,6 +91,7 @@ class GmailMessage(DataDict):
 @dataclass()
 class InkartJob(DataDict):
     id: str    # номер задания, id GmailMessage
+    snippet: str        # текст сообщения
     created: datetime   # когда задание создано UTC
     status: JobStatus   # статус задания
     doctor_id: int      # исполнитель
@@ -111,11 +112,16 @@ class InkartJob(DataDict):
 
     def __init__(self):
         self.id = ''
+        self.snippet = ''
         self.created = datetime.utcnow()
         self.status = JobStatus.CREATED
         self.doctor_id = None
+        self.request_id = ''
         self.request_started = None
         self.request_time_estimate = None
+        self.request_answer_id =None
+        self.answered = None
+
         self.job_start_id = None
         self.job_started = None
         self.job_time_estimate = None
