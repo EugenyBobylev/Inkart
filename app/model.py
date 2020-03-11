@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
@@ -113,7 +113,7 @@ class InkartJob(DataDict):
     def __init__(self):
         self.id = ''
         self.snippet = ''
-        self.created = datetime.utcnow()
+        self.created = datetime.now().astimezone(timezone.utc)
         self.status = JobStatus.CREATED
         self.doctor_id = None
         self.request_id = None

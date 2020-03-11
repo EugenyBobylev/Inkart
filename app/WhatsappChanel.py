@@ -235,6 +235,12 @@ def sync_clients_with_db() -> None:
         add_doctor(data)
     whatsapp_data.clear()
 
+def get_users():
+    """Get list of users"""
+    response = requests.get('http://jsonplaceholder.typicode.com/users')
+    if response.ok:
+        return response
+    return None
 
 # data = get_api_modes()
 # data = get_api_transports()
@@ -256,8 +262,8 @@ if __name__ == "__main__":
     # start_date = utc_now.strftime("%d-%m-%YT%H:%M:%S %Z")
 
     start_date = datetime(2020, 3, 10, 7, 50, 0, 0, tzinfo=timezone.utc) # .strftime("%d-%m-%YT%H:%M:%S %Z")
+    # start_date = datetime.now().astimezone(timezone.utc)
     finish_date = start_date + timedelta(hours=2)
-    start_date = datetime.utcnow().astimezone(timezone.utc)
     print(start_date)
     print(finish_date)
     # val = get_api_messages(96881373,start_date)

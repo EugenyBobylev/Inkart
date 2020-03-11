@@ -5,7 +5,7 @@ from typing import List, Dict
 
 from dateutil import parser
 from timeloop import Timeloop
-from datetime import timedelta, datetime, timezone
+from datetime import timedelta, timezone, datetime
 
 from app.GMailApi import get_service, get_all_unread_emails, modify_message
 from app.Job import JobStatus
@@ -67,7 +67,7 @@ def find_doctor(job: InkartJob) -> None:
     data = result["data"]
     logging.info(f"data= {data}")
     job.request_id = data['message_id']
-    job.request_started = datetime.utcnow().astimezone(timezone.utc)
+    job.request_started = datetime.now().astimezone(timezone.utc)
     job.request_time_estimate = job.request_started + timedelta(hours=1)
     # ждем подтверждения запроса
     confirm_request(job, candidat_id)
@@ -78,8 +78,9 @@ def find_doctor(job: InkartJob) -> None:
 
 def confirm_request(job: InkartJob, candidat_id: int) -> None:
     logging.info("run: confirm_request")
-    now = datetime.utcnow().astimezone(timezone.utc)
+    now = datetime.now().astimezone(timezone.utc)
     while now < job.request_time_estimate:
+        logging.info("run: confirm_request while")
         val = get_api_messages(candidat_id, job.request_started)
         status = val['status']
         if status != 'success':
@@ -88,11 +89,11 @@ def confirm_request(job: InkartJob, candidat_id: int) -> None:
         last_msg = ChatMessage.from_json(data[-1])
         msg_date: datetime = parser.parse(last_msg.created)
         if job.request_started < msg_date < job.request_time_estimate:
-            if last_msg.text.upper() == 'ДA':
+            if last_msg.text.upper() == 'ДА':
                 job.request_answer_id = last_msg.id
                 job.answered = msg_date
             break
-        datetime.sleep(30.0)
+        time.sleep(30.0)
 
 
 def send_job(job: InkartJob) -> None:
@@ -106,7 +107,7 @@ def send_job(job: InkartJob) -> None:
         return
     data = result["data"]
     job.job_start_id = data['id']
-    job.job_started = datetime.utcnow().astimezone(timezone.utc)
+    job.job_started = datetime.now().astimezone(timezone.utc)
     job.job_time_estimate = job.job_started + timedelta(hours=2, minutes=10)
     # ждем результат
     wait_processing(job)
@@ -114,7 +115,7 @@ def send_job(job: InkartJob) -> None:
 
 def wait_processing(job: InkartJob) -> None:
     logging.info("run: wait_processing")
-    now = datetime.utcnow().astimezone(timezone.utc)
+    now = datetime.now().astimezone(timezone.utc)
     while now < job.job_time_estimate:
         val = get_api_messages(job.doctor_id, job.job_started)
         status = val['status']
@@ -127,7 +128,7 @@ def wait_processing(job: InkartJob) -> None:
             job.job_finish_id = last_msg.id
             job.job_finished = last_msg.created
             break
-        datetime.sleep(30.0)
+        time.sleep(30.0)
 
 
 def send_rejection(job: InkartJob) -> None:
@@ -136,10 +137,11 @@ def send_rejection(job: InkartJob) -> None:
     result = post_api_message(job.request_id, msg)
 
 
-def send_success(job: InkartJob) -> None:
+def send_success(job: InkartJob) -> object:
     logging.info("run: send_success")
     msg = "Подтверждаем выполнение заказа"
     result = post_api_message(job.request_id, msg)
+    return object
 
 
 def run_job(job: InkartJob) -> None:
@@ -167,4 +169,9 @@ if __name__ == "__main__":
     # candidat_id = 96881373
     # request_id = 360611360
     # created_str = '2020-03-10T05:08:04 UTC'
-    tl.start(block=True)
+    #tl.start(block=True)
+    myJob = InkartJob()
+    myJob.id ='170c3a9ba451cd9e'
+    myJob.snippet = 'Задание на обработку № 123'
+    run_job(myJob)
+    print(myJob)
