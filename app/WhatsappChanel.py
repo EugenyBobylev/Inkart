@@ -1,4 +1,6 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
+
+from dateutil import parser
 from dateutil.tz import tzlocal
 from typing import NamedTuple, List, Dict
 import json
@@ -252,15 +254,30 @@ if __name__ == "__main__":
     # utc_now = current_now.astimezone(timezone.utc)
     # print(utc_now)
     # start_date = utc_now.strftime("%d-%m-%YT%H:%M:%S %Z")
-    start_date = datetime(2020, 3, 10, 10, 40, 0, 0, tzinfo=timezone.utc) # .strftime("%d-%m-%YT%H:%M:%S %Z")
+
+    start_date = datetime(2020, 3, 10, 7, 50, 0, 0, tzinfo=timezone.utc) # .strftime("%d-%m-%YT%H:%M:%S %Z")
+    finish_date = start_date + timedelta(hours=2)
+    start_date = datetime.utcnow().astimezone(timezone.utc)
     print(start_date)
-    start_date = datetime.utcnow()
-    val = get_api_messages(96881373,start_date)
+    print(finish_date)
+    # val = get_api_messages(96881373,start_date)
+
+    val = load_data_json()
+
+    status = val['status']
+    if status == 'success':
+        data: List[Dict] = val['data']
+        last_msg = ChatMessage.from_json(data[-1])
+
+        msg_date: datetime = parser.parse(last_msg.created)
+        if start_date <= msg_date <= finish_date:
+            if last_msg.text.upper() == 'ДА':
+                print(f"text='{last_msg.text}'; created={msg_date}")
+        # print(data)
 
     # val = get_api_message(message_id=360611360)
     # val = get_api_all_clients(20)
     # val = post_api_message(96881373, 'Привет Евгений Александрович')
-    print(val)
     # val = {'data': [{'id': 359976315, 'text': 'Принимаю', 'coordinates': None, 'transport': 'whatsapp', 'type': 'from_client', 'read': 1, 'created': '2020-03-08T22:24:48 UTC', 'pdf': None, 'remote_id': None, 'recipient_status': None, 'ai_tips': None, 'dialog_id': 12667967, 'operator_id': 59750, 'channel_id': 19286, 'attachments': [], 'photo': None, 'video': None, 'audio': None, 'client_id': 96881373, 'extra_data': {}}], 'meta': {'total': 1, 'limit': 20, 'offset': 0}, 'status': 'success'}
     # json_data = val['data']
     # chat_msg: ChatMessage = ChatMessage.from_json(json_data)
