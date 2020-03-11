@@ -106,7 +106,7 @@ def send_job(job: InkartJob) -> None:
     if status != 'success':
         return
     data = result["data"]
-    job.job_start_id = data['id']
+    job.job_start_id = data['message_id']
     job.job_started = datetime.now().astimezone(timezone.utc)
     job.job_time_estimate = job.job_started + timedelta(hours=2, minutes=10)
     # ждем результат
@@ -134,13 +134,13 @@ def wait_processing(job: InkartJob) -> None:
 def send_rejection(job: InkartJob) -> None:
     logging.info("run: send_rejection")
     msg = "К сожалению мы вынуждены отменить выполнение Вами заказа."
-    result = post_api_message(job.request_id, msg)
+    result = post_api_message(job.doctor_id, msg)
 
 
 def send_success(job: InkartJob) -> object:
     logging.info("run: send_success")
     msg = "Подтверждаем выполнение заказа"
-    result = post_api_message(job.request_id, msg)
+    result = post_api_message(job.doctor_id_id, msg)
     return object
 
 
@@ -153,6 +153,7 @@ def run_job(job: InkartJob) -> None:
         send_rejection(job)  # послать отказ
     if job.job_finished is not None:
         send_success(job)    # послать подтверждение выполнения
+        job.closed = datetime.now().astimezone(timezone.utc)
 
 
 if __name__ == "__main__":
@@ -169,9 +170,4 @@ if __name__ == "__main__":
     # candidat_id = 96881373
     # request_id = 360611360
     # created_str = '2020-03-10T05:08:04 UTC'
-    #tl.start(block=True)
-    myJob = InkartJob()
-    myJob.id ='170c3a9ba451cd9e'
-    myJob.snippet = 'Задание на обработку № 123'
-    run_job(myJob)
-    print(myJob)
+    tl.start(block=True)

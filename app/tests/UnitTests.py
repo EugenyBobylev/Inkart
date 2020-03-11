@@ -35,7 +35,6 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(self.job.request_answer_id, 360837004)
         self.assertTrue(self.job.answered is not None)
 
-
     @patch('app.WhatsappChanel.requests.request')
     def test_get_api_message(self, mock_get):
         mock_get.return_value.text = '{"data":{"id": 22, "name": "Привет"}, "status":"success"}'
