@@ -23,12 +23,12 @@ def check_new_email():
     new_messages = get_all_unread_emails(srv)
     count = len(new_messages)
     if count < 1:
-        logging.info(f"run: check_new_email, no new email")
+        logger.info("run: check_new_email, no new email")
     else:
-        logging.info(f"run: check_new_email, has new email(s)")
+        logger.info(f"run: check_new_email, has new email(s)")
         for message in new_messages:
             job = InkartJob.from_json(message)
-            logging.info(f"{job}")
+            logger.info(f"{job}")
             job_queue.put(job)
             # mark e-mail message as readed
             labels = {"removeLabelIds":  ['UNREAD'], "addLabelIds": []}
@@ -38,7 +38,7 @@ def check_new_email():
 @tl.job(interval=timedelta(seconds=5))
 def check_job_queue():
     if not job_queue.empty():
-        logging.info("run: check_job_queue")
+        logger.info("run: check_job_queue")
         job: InkartJob = job_queue.get()
         t = threading.Thread(target=run_job, args=(job,))
         t.start()
@@ -59,7 +59,7 @@ def run_job(job: InkartJob) -> None:
 
 def send_whatsapp_message(msg):
     data = post_api_message(client_id=96881373, message=msg)
-    logging.info(data)
+    logger.info(data)
 
 
 # предложить кандидата для выполнения работы
@@ -69,7 +69,7 @@ def get_candidate() -> int:
 
 
 def find_doctor(job: InkartJob) -> None:
-    logging.info("run: find_doctor")
+    logger.info(("run: find_doctor"))
     # get free candidate for processing the result
     candidat_id = get_candidate()
     # send a request for processing the result
@@ -77,11 +77,11 @@ def find_doctor(job: InkartJob) -> None:
           "Если Вы готовы выполнить заказ, пришлите ответ со словом: Да."
     result = post_api_message(candidat_id, msg)
     status = result["status"]
-    logging.info(f"={status}")
+    logger.info(f"={status}")
     if status != 'success':
         return
     data = result["data"]
-    logging.info(f"data= {data}")
+    logger.info(f"data= {data}")
     job.request_id = data['message_id']
     job.request_started = datetime.now().astimezone(timezone.utc)
     job.request_time_estimate = job.request_started + timedelta(hours=1)
@@ -93,10 +93,10 @@ def find_doctor(job: InkartJob) -> None:
 
 
 def confirm_request(job: InkartJob, candidat_id: int) -> None:
-    logging.info("run: confirm_request")
+    logger.info("run: confirm_request")
     now = datetime.now().astimezone(timezone.utc)
     while now < job.request_time_estimate:
-        logging.info("run: confirm_request while")
+        logger.info("run: confirm_request while")
         val = get_api_messages(candidat_id, job.request_started)
         status = val['status']
         if status != 'success':
@@ -114,12 +114,12 @@ def confirm_request(job: InkartJob, candidat_id: int) -> None:
 
 
 def send_job(job: InkartJob) -> None:
-    logging.info("run: send_job")
+    logger.info("run: send_job")
     msg = "Скачайте задание <тут адрес>\n" \
           "Ждем результат через 2 ч."
     result = post_api_message(job.doctor_id, msg)
     status = result["status"]
-    logging.info(f"={status}")
+    logger.info(f"={status}")
     if status != 'success':
         return
     data = result["data"]
@@ -131,7 +131,7 @@ def send_job(job: InkartJob) -> None:
 
 
 def wait_processing(job: InkartJob) -> None:
-    logging.info("run: wait_processing")
+    logger.info("run: wait_processing")
     now = datetime.now().astimezone(timezone.utc)
     while now < job.job_time_estimate:
         val = get_api_messages(job.doctor_id, job.job_started)
@@ -149,27 +149,44 @@ def wait_processing(job: InkartJob) -> None:
 
 
 def send_rejection(job: InkartJob) -> None:
-    logging.info("run: send_rejection")
+    logger.info("run: send_rejection")
     msg = "К сожалению мы вынуждены отменить выполнение Вами заказа."
     result = post_api_message(job.doctor_id, msg)
 
 
 def send_success(job: InkartJob) -> object:
-    logging.info("run: send_success")
+    logger.info("run: send_success")
     msg = "Подтверждаем выполнение заказа"
     result = post_api_message(job.doctor_id, msg)
     return object
 
 
+def create_logger(name: str = 'test logger'):
+    logger = logging.getLogger('мой логгер')
+    logger.setLevel(logging.INFO)
+    # create console log handler
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+    # create formatter
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s: %(message)s')
+    # add formatter to ch
+    ch.setFormatter(formatter)
+    # add ch to loger
+    logger.addHandler(ch)
+    return logger
+
+
 if __name__ == "__main__":
-    format = "%(asctime)s: %(message)s"
-    logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
+    logger = create_logger()
+    logger.info("Начинаем работу")
+    check_new_email()
+    logger.info("Рабоата завершена")
     #  Проверка цикла работы задания
     # myjob = InkartJob()
     # myjob.id = '170c3a9ba451cd9e'
     # myjob.snippet = 'тестовое задание'
-    # logging.info('помещаем задание в очередь')
+    # logger.info('помещаем задание в очередь')
     # job_queue.put(myjob)
     # check_job_queue()
     # logging.info('check_job_queue - завершила работу')
-    tl.start(block=True)
+    # tl.start(block=True)
