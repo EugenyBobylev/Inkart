@@ -9,9 +9,8 @@ from timeloop import Timeloop
 from datetime import timedelta, timezone, datetime
 
 from app.GMailApi import get_service, get_all_unread_emails, modify_message
-from app.Job import JobStatus
 from app.WhatsappChanel import post_api_message, get_api_messages
-from app.model import GmailMessage, InkartJob, Doctor, ChatMessage
+from app.model import IncartJob, ChatMessage
 
 tl = Timeloop()
 job_queue = queue.Queue()
@@ -27,7 +26,7 @@ def check_new_email():
     else:
         logger.info(f"run: check_new_email, has new email(s)")
         for message in new_messages:
-            job = InkartJob.from_json(message)
+            job = IncartJob.from_json(message)
             logger.info(f"{job}")
             job_queue.put(job)
             # mark e-mail message as readed
@@ -39,13 +38,13 @@ def check_new_email():
 def check_job_queue():
     if not job_queue.empty():
         logger.info("run: check_job_queue")
-        job: InkartJob = job_queue.get()
+        job: IncartJob = job_queue.get()
         t = threading.Thread(target=run_job, args=(job,))
         t.start()
 
 
 # Запустить задачу на выполнение
-def run_job(job: InkartJob) -> None:
+def run_job(job: IncartJob) -> None:
     if job.doctor_id is None:
         find_doctor(job)
     if job.doctor_id is not None:
@@ -64,11 +63,11 @@ def send_whatsapp_message(msg):
 
 # предложить кандидата для выполнения работы
 def get_candidate() -> int:
-    logging.info("run: get_candidate")
+    logger.info("run: get_candidate")
     return 96881373  # Бобылев Е.А. 96881373
 
 
-def find_doctor(job: InkartJob) -> None:
+def find_doctor(job: IncartJob) -> None:
     logger.info(("run: find_doctor"))
     # get free candidate for processing the result
     candidat_id = get_candidate()
@@ -77,11 +76,10 @@ def find_doctor(job: InkartJob) -> None:
           "Если Вы готовы выполнить заказ, пришлите ответ со словом: Да."
     result = post_api_message(candidat_id, msg)
     status = result["status"]
-    logger.info(f"={status}")
     if status != 'success':
         return
     data = result["data"]
-    logger.info(f"data= {data}")
+    logger.info(f"data={data}")
     job.request_id = data['message_id']
     job.request_started = datetime.now().astimezone(timezone.utc)
     job.request_time_estimate = job.request_started + timedelta(hours=1)
@@ -92,7 +90,7 @@ def find_doctor(job: InkartJob) -> None:
     job.doctor_id = candidat_id
 
 
-def confirm_request(job: InkartJob, candidat_id: int) -> None:
+def confirm_request(job: IncartJob, candidat_id: int) -> None:
     logger.info("run: confirm_request")
     now = datetime.now().astimezone(timezone.utc)
     while now < job.request_time_estimate:
@@ -113,7 +111,7 @@ def confirm_request(job: InkartJob, candidat_id: int) -> None:
         time.sleep(30.0)
 
 
-def send_job(job: InkartJob) -> None:
+def send_job(job: IncartJob) -> None:
     logger.info("run: send_job")
     msg = "Скачайте задание <тут адрес>\n" \
           "Ждем результат через 2 ч."
@@ -130,7 +128,7 @@ def send_job(job: InkartJob) -> None:
     wait_processing(job)
 
 
-def wait_processing(job: InkartJob) -> None:
+def wait_processing(job: IncartJob) -> None:
     logger.info("run: wait_processing")
     now = datetime.now().astimezone(timezone.utc)
     while now < job.job_time_estimate:
@@ -148,13 +146,13 @@ def wait_processing(job: InkartJob) -> None:
         time.sleep(30.0)
 
 
-def send_rejection(job: InkartJob) -> None:
+def send_rejection(job: IncartJob) -> None:
     logger.info("run: send_rejection")
     msg = "К сожалению мы вынуждены отменить выполнение Вами заказа."
     result = post_api_message(job.doctor_id, msg)
 
 
-def send_success(job: InkartJob) -> object:
+def send_success(job: IncartJob) -> object:
     logger.info("run: send_success")
     msg = "Подтверждаем выполнение заказа"
     result = post_api_message(job.doctor_id, msg)
@@ -178,15 +176,12 @@ def create_logger(name: str = 'test logger'):
 
 if __name__ == "__main__":
     logger = create_logger()
-    logger.info("Начинаем работу")
-    check_new_email()
-    logger.info("Рабоата завершена")
-    #  Проверка цикла работы задания
-    # myjob = InkartJob()
-    # myjob.id = '170c3a9ba451cd9e'
-    # myjob.snippet = 'тестовое задание'
-    # logger.info('помещаем задание в очередь')
-    # job_queue.put(myjob)
-    # check_job_queue()
+    # Проверка цикла работы задания
+    myjob = IncartJob()
+    myjob.id = '170c3a9ba451cd9e'
+    myjob.snippet = 'тестовое задание'
+    logger.info('помещаем задание в очередь')
+    job_queue.put(myjob)
+    check_job_queue()
     # logging.info('check_job_queue - завершила работу')
     # tl.start(block=True)

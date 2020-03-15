@@ -5,7 +5,6 @@ from typing import List
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 
-from app.Job import JobStatus
 from config import Config
 
 db_uri = Config.SQLALCHEMY_DATABASE_URI;
@@ -89,19 +88,18 @@ class GmailMessage(DataDict):
 
 # Задание на обработку
 @dataclass()
-class InkartJob(DataDict):
+class IncartJob(DataDict):
     id: str    # номер задания, id GmailMessage
     snippet: str        # текст сообщения
     created: datetime   # когда задание создано UTC
-    status: JobStatus   # статус задания
-    doctor_id: int      # исполнитель
-
+    candidate_id: int   # id кандидата
     request_id: int      # id whatsapp message запроса доктору на расшифровку
     request_started: datetime  # метка времени UTC отправки запроса доктору на расшифровку
     request_time_estimate: datetime  # метка времени UTC ожидания получения подтверждения от доктора
     request_answer_id: int  # id whatsapp message получения согласия на расшифровку
     answered: datetime  # метка времени UTC получения согласия на расшифровку
 
+    doctor_id: int      # исполнитель
     job_start_id: int  # id whatsapp message отправленного доктору с заданием нарасшифровку
     job_started: datetime  # время отправки
     job_time_estimate: datetime # Ожидаемое время окончания расшифровки
@@ -114,7 +112,6 @@ class InkartJob(DataDict):
         self.id = ''
         self.snippet = ''
         self.created = datetime.now().astimezone(timezone.utc)
-        self.status = JobStatus.CREATED
         self.doctor_id = None
         self.request_id = None
         self.request_started = None

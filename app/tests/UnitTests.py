@@ -10,7 +10,7 @@ from app.WhatsappNotification import send_success, confirm_request, job_queue
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        self.job = app.model.InkartJob()
+        self.job = app.model.IncartJob()
         self.job.id = '170c3a9ba451cd9e'
         self.job.snippet = 'Задание на обработку № 123'
 
