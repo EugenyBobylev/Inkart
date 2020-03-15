@@ -17,7 +17,7 @@ tl = Timeloop()
 job_queue = queue.Queue()
 
 
-@tl.job(interval=timedelta(seconds=60))
+@tl.job(interval=timedelta(seconds=15))
 def check_new_email():
     srv = get_service()
     new_messages = get_all_unread_emails(srv)
@@ -35,14 +35,13 @@ def check_new_email():
             modify_message(srv, "me", message["id"], labels)
 
 
-@tl.job(interval=timedelta(seconds=4))
+@tl.job(interval=timedelta(seconds=5))
 def check_job_queue():
     if not job_queue.empty():
         logging.info("run: check_job_queue")
         job: InkartJob = job_queue.get()
         t = threading.Thread(target=run_job, args=(job,))
         t.start()
-        # run_job(job)
 
 
 # Запустить задачу на выполнение
@@ -166,12 +165,11 @@ if __name__ == "__main__":
     format = "%(asctime)s: %(message)s"
     logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
     #  Проверка цикла работы задания
-    myjob = InkartJob()
-    myjob.id = '170c3a9ba451cd9e'
-    myjob.snippet = 'тестовое задание'
-    logging.info('помещаем задание в очередь')
-    job_queue.put(myjob)
-    check_job_queue()
-    logging.info('check_job_queue - завершила работу')
-
-    #tl.start(block=True)
+    # myjob = InkartJob()
+    # myjob.id = '170c3a9ba451cd9e'
+    # myjob.snippet = 'тестовое задание'
+    # logging.info('помещаем задание в очередь')
+    # job_queue.put(myjob)
+    # check_job_queue()
+    # logging.info('check_job_queue - завершила работу')
+    tl.start(block=True)
