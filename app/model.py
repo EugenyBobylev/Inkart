@@ -12,6 +12,17 @@ engine = create_engine(db_uri)
 Base = declarative_base()
 
 
+class DataDict(object):
+    @classmethod
+    def from_json(cls, json_data):
+        msg = cls()
+        for key in json_data:
+            if hasattr(msg, key):
+                value = json_data[key]
+                setattr(msg, key, value)
+        return msg
+
+
 # данные об исполнителях из chat2desktop
 class Doctor(Base):
     __tablename__ = "doctors"
@@ -33,17 +44,6 @@ class Doctor(Base):
     def __repr__(self):
         return f'id={self.id}; name="{self.name}"; phone={self.phone}, ' \
                f'assigned_name="{self.assigned_name}", comment={self.comment}'
-
-
-class DataDict(object):
-    @classmethod
-    def from_json(cls, json_data):
-        msg = cls()
-        for key in json_data:
-            if hasattr(msg, key):
-                value = json_data[key]
-                setattr(msg, key, value)
-        return msg
 
 
 # Задание на обработку
