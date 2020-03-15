@@ -46,6 +46,48 @@ class DataDict(object):
         return msg
 
 
+# Задание на обработку
+class IncartJob(Base, DataDict):
+    __tablename__ = "incartjobs"
+
+    id = Column("id", String(16), primary_key=True)
+    snippet = Column("snippet", String(512))  # текст сообщения
+    created = Column("created", DateTime)     # когда задание создано UTC
+    candidate_id = Column("candidate_id", Integer)  # id кандидата
+    request_id = Column("request_id", Integer)      # id whatsapp message запроса доктору на расшифровку
+    request_started = Column("request_started", DateTime)  # метка времени UTC отправки запроса доктору на расшифровку
+    request_time_estimate = Column("request_time_estimate", DateTime)  # метка времени UTC ожидания получения подтверждения от доктора
+    request_answer_id = Column("request_answer_id", Integer)  # id whatsapp message получения согласия на расшифровку
+    answered = Column("answered", DateTime)  # метка времени UTC получения согласия на расшифровку
+
+    doctor_id = Column("doctor_id", Integer)        # исполнитель
+    job_start_id = Column("job_start_id", Integer)  # id whatsapp message отправленного доктору с заданием нарасшифровку
+    job_started = Column("job_started", DateTime)  # время отправки
+    job_time_estimate = Column("job_time_estimate", Integer) # Ожидаемое время окончания расшифровки
+
+    job_finish_id = Column("job_finish_id", Integer)  # id whatsapp message с подтверждением окончания расшифровки
+    job_finished = Column("job_finished", DateTime)  # метка времени UTC с подтверждением окончания расшифровки
+    closed = Column("closed", DateTime)    # метка времени UTC закрытия задания
+
+    def __init__(self):
+        self.id = ''
+        self.snippet = ''
+        self.created = datetime.now().astimezone(timezone.utc)
+        self.doctor_id = None
+        self.request_id = None
+        self.request_started = None
+        self.request_time_estimate = None
+        self.request_answer_id = None
+        self.answered = None
+
+        self.job_start_id = None
+        self.job_started = None
+        self.job_time_estimate = None
+        self.job_finish_id = None
+        self.job_finished = None
+        self.closed = None
+
+
 # chat2desk whatsapp messah=ge
 @dataclass
 class ChatMessage(DataDict):
@@ -84,44 +126,3 @@ class GmailMessage(DataDict):
         self.trhreadId = ''
         self.labelIds = []
         self.snippet = ''
-
-
-# Задание на обработку
-@dataclass()
-class IncartJob(DataDict):
-    id: str    # номер задания, id GmailMessage
-    snippet: str        # текст сообщения
-    created: datetime   # когда задание создано UTC
-    candidate_id: int   # id кандидата
-    request_id: int      # id whatsapp message запроса доктору на расшифровку
-    request_started: datetime  # метка времени UTC отправки запроса доктору на расшифровку
-    request_time_estimate: datetime  # метка времени UTC ожидания получения подтверждения от доктора
-    request_answer_id: int  # id whatsapp message получения согласия на расшифровку
-    answered: datetime  # метка времени UTC получения согласия на расшифровку
-
-    doctor_id: int      # исполнитель
-    job_start_id: int  # id whatsapp message отправленного доктору с заданием нарасшифровку
-    job_started: datetime  # время отправки
-    job_time_estimate: datetime # Ожидаемое время окончания расшифровки
-
-    job_finish_id: int  # id whatsapp message с подтверждением окончания расшифровки
-    job_finished: datetime  # метка времени UTC с подтверждением окончания расшифровки
-    closed: datetime    # метка времени UTC закрытия задания
-
-    def __init__(self):
-        self.id = ''
-        self.snippet = ''
-        self.created = datetime.now().astimezone(timezone.utc)
-        self.doctor_id = None
-        self.request_id = None
-        self.request_started = None
-        self.request_time_estimate = None
-        self.request_answer_id =None
-        self.answered = None
-
-        self.job_start_id = None
-        self.job_started = None
-        self.job_time_estimate = None
-        self.job_finish_id = None
-        self.job_finished = None
-        self.closed = None

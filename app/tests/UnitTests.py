@@ -4,8 +4,8 @@ from datetime import datetime, timezone, timedelta
 
 import app.model
 import app.Job
-from app.WhatsappChanel import get_users, get_api_message
-from app.WhatsappNotification import send_success, confirm_request, job_queue
+from app.WhatsappChanel import get_api_message
+from app.WhatsappNotification import confirm_request
 
 
 class MyTestCase(unittest.TestCase):
@@ -14,8 +14,7 @@ class MyTestCase(unittest.TestCase):
         self.job.id = '170c3a9ba451cd9e'
         self.job.snippet = 'Задание на обработку № 123'
 
-    def test_inkart_job(self):
-        self.assertEqual(app.Job.JobStatus.CREATED, self.job.status)
+    def test_inсart_job(self):
         self.assertEqual('170c3a9ba451cd9e', self.job.id)
         self.assertEqual('Задание на обработку № 123', self.job.snippet)
 
@@ -41,8 +40,6 @@ class MyTestCase(unittest.TestCase):
         response = get_api_message(33)
         self.assertEqual(response["status"], 'success')
 
-    def test_check_job_queue(self):
-        job_queue.put(self.job)
 
 if __name__ == '__main__':
     unittest.main()
