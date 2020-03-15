@@ -1,6 +1,7 @@
 import logging
 import queue
 import time
+import threading
 from typing import List, Dict
 
 from dateutil import parser
@@ -16,7 +17,7 @@ tl = Timeloop()
 job_queue = queue.Queue()
 
 
-@tl.job(interval=timedelta(seconds=15))
+@tl.job(interval=timedelta(seconds=60))
 def check_new_email():
     srv = get_service()
     new_messages = get_all_unread_emails(srv)
@@ -34,12 +35,14 @@ def check_new_email():
             modify_message(srv, "me", message["id"], labels)
 
 
-@tl.job(interval=timedelta(seconds=1))
+@tl.job(interval=timedelta(seconds=4))
 def check_job_queue():
     if not job_queue.empty():
         logging.info("run: check_job_queue")
         job: InkartJob = job_queue.get()
-        run_job(job)
+        t = threading.Thread(target=run_job, args=(job,))
+        t.start()
+        # run_job(job)
 
 
 # Запустить задачу на выполнение
@@ -100,13 +103,14 @@ def confirm_request(job: InkartJob, candidat_id: int) -> None:
         if status != 'success':
             continue
         data: List[Dict] = val["data"]
-        last_msg = ChatMessage.from_json(data[-1])
-        msg_date: datetime = parser.parse(last_msg.created)
-        if job.request_started < msg_date < job.request_time_estimate:
-            if last_msg.text.upper() == 'ДА':
-                job.request_answer_id = last_msg.id
-                job.answered = msg_date
-            break
+        if len(data) > 0:
+            last_msg = ChatMessage.from_json(data[-1])
+            msg_date: datetime = parser.parse(last_msg.created)
+            if job.request_started < msg_date < job.request_time_estimate:
+                if last_msg.text.upper() == 'ДА':
+                    job.request_answer_id = last_msg.id
+                    job.answered = msg_date
+                break
         time.sleep(30.0)
 
 
@@ -154,22 +158,20 @@ def send_rejection(job: InkartJob) -> None:
 def send_success(job: InkartJob) -> object:
     logging.info("run: send_success")
     msg = "Подтверждаем выполнение заказа"
-    result = post_api_message(job.doctor_id_id, msg)
+    result = post_api_message(job.doctor_id, msg)
     return object
 
 
 if __name__ == "__main__":
     format = "%(asctime)s: %(message)s"
     logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
-    # srv = get_service()
-    # new_messages = get_all_unread_emails(srv)
-    # for msg in new_messages:
-    #     job = InkartJob.from_json(msg)
-    #     print(job)
-    # print(new_messages)
-    # send_whatsapp_message('От чего же я не нахожусь?!')
-    # check_new_email()
-    # candidat_id = 96881373
-    # request_id = 360611360
-    # created_str = '2020-03-10T05:08:04 UTC'
-    tl.start(block=True)
+    #  Проверка цикла работы задания
+    myjob = InkartJob()
+    myjob.id = '170c3a9ba451cd9e'
+    myjob.snippet = 'тестовое задание'
+    logging.info('помещаем задание в очередь')
+    job_queue.put(myjob)
+    check_job_queue()
+    logging.info('check_job_queue - завершила работу')
+
+    #tl.start(block=True)

@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 import app.model
 import app.Job
 from app.WhatsappChanel import get_users, get_api_message
-from app.WhatsappNotification import send_success, confirm_request
+from app.WhatsappNotification import send_success, confirm_request, job_queue
 
 
 class MyTestCase(unittest.TestCase):
@@ -41,6 +41,8 @@ class MyTestCase(unittest.TestCase):
         response = get_api_message(33)
         self.assertEqual(response["status"], 'success')
 
+    def test_check_job_queue(self):
+        job_queue.put(self.job)
 
 if __name__ == '__main__':
     unittest.main()
