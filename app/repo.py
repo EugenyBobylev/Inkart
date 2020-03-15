@@ -80,3 +80,8 @@ def get_dictors_id() -> List[int]:
     for item in result:
         lst.append(item.id)
     return lst
+
+
+def get_all_doctors() -> List[Doctor]:
+    result = session.query(Doctor).all()
+    return result

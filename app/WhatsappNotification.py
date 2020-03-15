@@ -42,9 +42,23 @@ def check_job_queue():
         run_job(job)
 
 
+# Запустить задачу на выполнение
+def run_job(job: InkartJob) -> None:
+    if job.doctor_id is None:
+        find_doctor(job)
+    if job.doctor_id is not None:
+        send_job(job)
+    if job.job_finish_id is None:
+        send_rejection(job)  # послать отказ
+    if job.job_finished is not None:
+        send_success(job)    # послать подтверждение выполнения
+        job.closed = datetime.now().astimezone(timezone.utc)
+
+
 def send_whatsapp_message(msg):
     data = post_api_message(client_id=96881373, message=msg)
     logging.info(data)
+
 
 # предложить кандидата для выполнения работы
 def get_candidate() -> int:
@@ -142,18 +156,6 @@ def send_success(job: InkartJob) -> object:
     msg = "Подтверждаем выполнение заказа"
     result = post_api_message(job.doctor_id_id, msg)
     return object
-
-
-def run_job(job: InkartJob) -> None:
-    if job.doctor_id is None:
-        find_doctor(job)
-    if job.doctor_id is not None:
-        send_job(job)
-    if job.job_finish_id is None:
-        send_rejection(job)  # послать отказ
-    if job.job_finished is not None:
-        send_success(job)    # послать подтверждение выполнения
-        job.closed = datetime.now().astimezone(timezone.utc)
 
 
 if __name__ == "__main__":
