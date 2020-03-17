@@ -10,11 +10,13 @@ from datetime import timedelta, timezone, datetime
 
 from app.GMailApi import get_service, get_all_unread_emails, modify_message
 from app.WhatsappChanel import post_api_message, get_api_messages
-from app.model import IncartJob, ChatMessage
+from app.model import IncartJob, ChatMessage, dal
+from app.repo import Repo
 
 tl = Timeloop()
 job_queue = queue.Queue()
 logger = None
+dal.connect()
 
 
 @tl.job(interval=timedelta(seconds=15))
@@ -26,13 +28,18 @@ def check_new_email():
         log_info("run: check_new_email, no new email")
     else:
         log_info(f"run: check_new_email, has new email(s)")
+        dal.session = dal.Session()
+        repo = Repo(dal.session)
         for message in new_messages:
             job = IncartJob.from_json(message)
-            logger.info(f"{job}")
-            job_queue.put(job)
-            # mark e-mail message as readed
-            labels = {"removeLabelIds":  ['UNREAD'], "addLabelIds": []}
-            modify_message(srv, "me", message["id"], labels)
+            result = repo.add_incartjob(job)
+            if result['ok']:
+                logger.info(f"{job}")
+                job_queue.put(job)
+                # mark e-mail message as readed
+                labels = {"removeLabelIds":  ['UNREAD'], "addLabelIds": []}
+                modify_message(srv, "me", message["id"], labels)
+        dal.session.close()
 
 
 @tl.job(interval=timedelta(seconds=5))
@@ -43,18 +50,30 @@ def check_job_queue():
         t = threading.Thread(target=run_job, args=(job,))
         t.start()
 
+# записать изменения состояния задачи в БД
+def update_job(job: IncartJob) -> bool:
+    log_info("run: update_job")
+    dal.session = dal.Session()
+    repo = Repo(dal.session)
+    result = repo.update_incartjob(job)
+    dal.session.close()
+    log_info(f"run: update_job, result={result['ok']}")
+    return result['ok']
+
 
 # Запустить задачу на выполнение
 def run_job(job: IncartJob) -> None:
     if job.doctor_id is None:
         find_doctor(job)
     if job.doctor_id is not None:
+        update_job(job)
         send_job(job)
     if job.job_finish_id is None:
         send_rejection(job)  # послать отказ
     if job.job_finished is not None:
         send_success(job)    # послать подтверждение выполнения
         job.closed = datetime.now().astimezone(timezone.utc)
+        update_job()
 
 
 def send_whatsapp_message(msg):

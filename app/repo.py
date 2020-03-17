@@ -7,7 +7,7 @@ from typing import Dict, List
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import FlushError
 
-from app.model import DataAccessLayer, Doctor, IncartJob
+from app.model import DataAccessLayer, Doctor, IncartJob, dal
 
 
 class Repo(object):
@@ -47,7 +47,7 @@ class Repo(object):
 
     def del_doctor(self, id: int) -> bool:
         ok: bool = False
-        doctor = self.get_doctor(id)
+        doctor = self.get_doctor(id).first()
         if doctor is not None:
             self.session.delete(doctor)
             ok = self.session_commit()
@@ -65,10 +65,17 @@ class Repo(object):
         return result
 
     def get_incartjob(self, id: str) -> IncartJob:
-        job: IncartJob = self.session.query(IncartJob).filter(IncartJob.id == id)
+        job: IncartJob = self.session.query(IncartJob).filter(IncartJob.id == id).first()
         return job
 
     def add_incartjob(self, job: IncartJob) -> dict:
+        self.session.add(job)
+        ok: bool = self.session_commit()
+        if not ok:
+            return {"ok": ok, "job": None}
+        return {"ok": ok, "job": job}
+
+    def update_incartjob(self, job: IncartJob) -> dict:
         self.session.add(job)
         ok: bool = self.session_commit()
         if not ok:

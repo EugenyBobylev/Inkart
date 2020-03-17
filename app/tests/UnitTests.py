@@ -1,3 +1,4 @@
+import threading
 import unittest
 from unittest.mock import patch, Mock
 from datetime import datetime, timezone, timedelta
@@ -9,6 +10,7 @@ from app.WhatsappNotification import confirm_request
 from app.model import dal, IncartJob, Doctor, DataAccessLayer
 from app.repo import Repo
 from config import Config
+
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
@@ -47,6 +49,7 @@ class MyTestCase(unittest.TestCase):
         con_string = Config.SQLALCHEMY_DATABASE_URI
         self.assertEqual(con_string, dal.conn_string)
 
+
 class RepoTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -81,6 +84,7 @@ class RepoTests(unittest.TestCase):
         repo = Repo(dal.session)
         job = repo.get_incartjob(id='1234567890')
         self.assertIsNotNone(job)
+        self.assertEqual('test job', job.snippet)
 
     def test_add_job(self):
         job: IncartJob = IncartJob()
@@ -89,6 +93,52 @@ class RepoTests(unittest.TestCase):
         repo = Repo(dal.session)
         result = repo.add_incartjob(job)
         self.assertTrue(result["ok"])
+
+    def test_update_job(self):
+        repo = Repo(dal.session)
+        job1 = repo.get_incartjob(id='1234567890')
+        job1.doctor_id = 1
+        result = repo.update_incartjob(job1)
+
+        self.assertTrue(result['ok'])
+        job2 = repo.get_incartjob(id='1234567890')
+        self.assertEqual(job2.doctor_id, 1)
+
+    def test_thread_update_job(self):
+        mydal= DataAccessLayer()
+        mydal.conn_string = 'sqlite:///:memory:'
+        mydal.connect()
+
+        job = IncartJob()
+        job.id = '123'
+        job.snippet = 'test job'
+        mydal.session.add(job)
+        mydal.session.commit()
+        mydal.session.close()
+
+        mydal.session = mydal.Session()
+        job = mydal.session.query(IncartJob).filter(IncartJob.id == '123').first()
+        mydal.session.close()
+        self.assertEqual(job.snippet, 'test job')
+
+        t = threading.Thread(target=self.change_job, args=(job, 'привет', mydal))
+        t.start()
+        t.join()
+        # self.change_job(job, 'привет', mydal)
+        # job = mydal.session.query(IncartJob).filter(IncartJob.id == '123').first()
+
+        mydal.session = mydal.Session()
+        job = mydal.session.query(IncartJob).filter(IncartJob.id == '123').first()
+        mydal.session.close()
+        self.assertEqual(job.snippet, 'привет')
+
+
+    def change_job(self, job: IncartJob, snippet: str, dal: DataAccessLayer) -> None:
+        dal.session = dal.Session()
+        job.snippet = snippet
+        dal.session.add(job)
+        dal.session.commit()
+        dal.session.close()
 
 
 # подготовка тестовой БД
