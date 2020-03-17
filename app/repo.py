@@ -1,23 +1,18 @@
 from datetime import datetime
+
+import sqlalchemy
 from dateutil.tz import tz
 from typing import Dict, List
 
-from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import FlushError
 
-from app.model import engine, Doctor
+from app.model import DataAccessLayer, Doctor, IncartJob
 
 
 class Repo(object):
-    def __init__(self):
-        self.session = self.create_session()
-
-    def create_session(self):
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        return session
+    def __init__(self, session):
+        self.session: sqlalchemy.orm.session.Session = session
 
     def session_commit(self) -> bool:
         ok: bool = True
@@ -50,7 +45,7 @@ class Repo(object):
         doctor: Doctor = self.session.query(Doctor).filter(Doctor.id == id).first()
         return doctor
 
-    def del_doctor(self, id: int) -> None:
+    def del_doctor(self, id: int) -> bool:
         ok: bool = False
         doctor = self.get_doctor(id)
         if doctor is not None:
@@ -68,6 +63,17 @@ class Repo(object):
     def get_all_doctors(self) -> List[Doctor]:
         result = self.session.query(Doctor).all()
         return result
+
+    def get_incartjob(self, id: str) -> IncartJob:
+        job: IncartJob = self.session.query(IncartJob).filter(IncartJob.id == id)
+        return job
+
+    def add_incartjob(self, job: IncartJob) -> dict:
+        self.session.add(job)
+        ok: bool = self.session_commit()
+        if not ok:
+            return {"ok": ok, "job": None}
+        return {"ok": ok, "job": job}
 
 
 def to_utc_datetime(datetimestr) -> datetime:

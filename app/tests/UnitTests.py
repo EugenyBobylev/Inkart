@@ -2,10 +2,9 @@ import unittest
 from unittest.mock import patch, Mock
 from datetime import datetime, timezone, timedelta
 
-import app.model
-import app.Job
 from app.WhatsappChanel import get_api_message
 from app.WhatsappNotification import confirm_request
+from app.model import dal
 from app.repo import Repo
 
 
@@ -43,11 +42,24 @@ class MyTestCase(unittest.TestCase):
 
 
 class RepoTests(unittest.TestCase):
-    def test_get_all_doctors(self):
-        repo = Repo()
-        doctors = repo.get_all_doctors()
 
-        self.assertTrue(len(doctors) > 0)
+    @classmethod
+    def setUpClass(cls) -> None:
+        dal.conn_string = 'sqlite:///:memory:'
+        dal.connect()
+
+    def setUp(self) -> None:
+        dal.session = dal.Session()
+
+
+    def tearDown(self) -> None:
+        dal.session.close()
+
+    def test_get_all_doctors(self):
+        repo = Repo(dal.session)
+        doctors = repo.get_all_doctors()
+        self.assertEquals(doctors, [])
+
 
 if __name__ == '__main__':
     unittest.main()

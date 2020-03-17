@@ -3,12 +3,14 @@ from datetime import datetime, timezone
 from typing import List
 
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.exc import FlushError
 
 from config import Config
 
-db_uri = Config.SQLALCHEMY_DATABASE_URI;
-engine = create_engine(db_uri)
+conn_string = Config.SQLALCHEMY_DATABASE_URI;
 Base = declarative_base()
 
 
@@ -126,3 +128,20 @@ class GmailMessage(DataDict):
         self.trhreadId = ''
         self.labelIds = []
         self.snippet = ''
+
+
+class DataAccessLayer:
+
+    def __init__(self):
+        self.engine = None
+        self.session = None
+        self.conn_string = conn_string
+        self.Session = None
+
+    def connect(self):
+        self.engine = create_engine(self.conn_string)
+        Base.metadata.create_all(self.engine)
+        self.Session = sessionmaker(bind=self.engine)
+
+
+dal = DataAccessLayer()
