@@ -129,7 +129,6 @@ class GmailMessage(DataDict):
 
 
 class DataAccessLayer:
-
     def __init__(self):
         self.engine = None
         self.session = None
@@ -140,6 +139,7 @@ class DataAccessLayer:
         self.engine = create_engine(self.conn_string)
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
+        self.session = self.Session()
 
 
 dal = DataAccessLayer()

@@ -1,14 +1,11 @@
 from datetime import date, datetime, timezone, timedelta
-
-from dateutil import parser
-from dateutil.tz import tzlocal
-from typing import NamedTuple, List, Dict
+from typing import List, Dict
 import json
 import threading
 import requests
 
-from app.model import ChatMessage
-import app.repo
+from app.model import ChatMessage, dal
+from app.repo import Repo
 
 token = '456c1286ccf71bfcd1bda342d92a70'
 whatsapp_data: List[Dict] = []  # список словарей содержащих данные клиентов из whatsapp channel
@@ -208,7 +205,8 @@ def sync_client_with_db(client_id: int) -> None:
 
 
 def sync_clients_with_db() -> None:
-    repo = app.Repo()
+    dal.connect()
+    repo = Repo(dal.session)
     doctors_id: List = repo.get_doctors_id()  # id докторов из БД
     threads = []    # потоки асинхронной обработки
     offset = 0
@@ -257,33 +255,7 @@ def get_users():
 # val = get_api_dialogs()
 
 if __name__ == "__main__":
-    # tz = tzlocal()
-    # current_now = datetime.now(tz)
-    # print(current_now)
-    # utc_now = current_now.astimezone(timezone.utc)
-    # print(utc_now)
-    # start_date = utc_now.strftime("%d-%m-%YT%H:%M:%S %Z")
-
-    start_date = datetime(2020, 3, 10, 7, 50, 0, 0, tzinfo=timezone.utc) # .strftime("%d-%m-%YT%H:%M:%S %Z")
-    # start_date = datetime.now().astimezone(timezone.utc)
-    finish_date = start_date + timedelta(hours=2)
-    print(start_date)
-    print(finish_date)
-    # val = get_api_messages(96881373,start_date)
-
-    val = load_data_json()
-
-    status = val['status']
-    if status == 'success':
-        data: List[Dict] = val['data']
-        last_msg = ChatMessage.from_json(data[-1])
-
-        msg_date: datetime = parser.parse(last_msg.created)
-        if start_date <= msg_date <= finish_date:
-            if last_msg.text.upper() == 'ДА':
-                print(f"text='{last_msg.text}'; created={msg_date}")
-        # print(data)
-
+    #val = load_data_json()
     # val = get_api_message(message_id=360611360)
     # val = get_api_all_clients(20)
     # val = post_api_message(96881373, 'Привет Евгений Александрович')
@@ -292,4 +264,4 @@ if __name__ == "__main__":
     # chat_msg: ChatMessage = ChatMessage.from_json(json_data)
     # print(chat_msg)
     # chanel_id = 19286
-    # sync_clients_with_db()
+    sync_clients_with_db()

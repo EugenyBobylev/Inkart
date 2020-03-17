@@ -6,13 +6,13 @@ from sqlalchemy import orm
 
 from app.WhatsappChanel import get_api_message
 from app.WhatsappNotification import confirm_request
-from app.model import dal, IncartJob, Doctor
+from app.model import dal, IncartJob, Doctor, DataAccessLayer
 from app.repo import Repo
-
+from config import Config
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        self.job = app.model.IncartJob()
+        self.job = IncartJob()
         self.job.id = '170c3a9ba451cd9e'
         self.job.snippet = 'Задание на обработку № 123'
 
@@ -42,6 +42,10 @@ class MyTestCase(unittest.TestCase):
         response = get_api_message(33)
         self.assertEqual(response["status"], 'success')
 
+    def test_dal_connection_str(self):
+        dal = DataAccessLayer()
+        con_string = Config.SQLALCHEMY_DATABASE_URI
+        self.assertEqual(con_string, dal.conn_string)
 
 class RepoTests(unittest.TestCase):
     @classmethod
