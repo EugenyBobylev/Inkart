@@ -6,6 +6,7 @@ import app.model
 import app.Job
 from app.WhatsappChanel import get_api_message
 from app.WhatsappNotification import confirm_request
+from app.repo import Repo
 
 
 class MyTestCase(unittest.TestCase):
@@ -40,6 +41,13 @@ class MyTestCase(unittest.TestCase):
         response = get_api_message(33)
         self.assertEqual(response["status"], 'success')
 
+
+class RepoTests(unittest.TestCase):
+    def test_get_all_doctors(self):
+        repo = Repo()
+        doctors = repo.get_all_doctors()
+
+        self.assertTrue(len(doctors) > 0)
 
 if __name__ == '__main__':
     unittest.main()

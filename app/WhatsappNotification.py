@@ -178,6 +178,7 @@ def log_info(msg: str):
     if logger:
         logger.info(msg)
 
+
 if __name__ == "__main__":
     logger = create_logger()
     # Проверка цикла работы задания

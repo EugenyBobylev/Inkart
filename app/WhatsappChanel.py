@@ -8,7 +8,7 @@ import threading
 import requests
 
 from app.model import ChatMessage
-from app.repo import add_doctor, get_dictors_id
+import app.repo
 
 token = '456c1286ccf71bfcd1bda342d92a70'
 whatsapp_data: List[Dict] = []  # список словарей содержащих данные клиентов из whatsapp channel
@@ -157,6 +157,7 @@ def get_api_messages(client_id, start_date=None) -> object:
     __data__ = json.loads(response.text)
     return __data__
 
+
 def get_api_message(message_id) -> object:
     url = f"https://api.chat2desk.com/v1/messages/{message_id}"
     payload = {}
@@ -207,7 +208,8 @@ def sync_client_with_db(client_id: int) -> None:
 
 
 def sync_clients_with_db() -> None:
-    doctors_id: List = get_dictors_id()  # id докторов из БД
+    repo = app.Repo()
+    doctors_id: List = repo.get_doctors_id()  # id докторов из БД
     threads = []    # потоки асинхронной обработки
     offset = 0
     result = get_api_all_clients(offset)  # все клиенты из chat2desk (20 записей в странице
@@ -232,8 +234,9 @@ def sync_clients_with_db() -> None:
     for thread in threads:
         thread.join()
     for data in whatsapp_data:
-        add_doctor(data)
+        repo.add_doctor(data)
     whatsapp_data.clear()
+
 
 def get_users():
     """Get list of users"""
