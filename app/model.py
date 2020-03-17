@@ -3,10 +3,8 @@ from datetime import datetime, timezone
 from typing import List
 
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import FlushError
 
 from config import Config
 

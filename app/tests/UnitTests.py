@@ -2,9 +2,11 @@ import unittest
 from unittest.mock import patch, Mock
 from datetime import datetime, timezone, timedelta
 
+from sqlalchemy import orm
+
 from app.WhatsappChanel import get_api_message
 from app.WhatsappNotification import confirm_request
-from app.model import dal
+from app.model import dal, IncartJob, Doctor
 from app.repo import Repo
 
 
@@ -42,23 +44,60 @@ class MyTestCase(unittest.TestCase):
 
 
 class RepoTests(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls) -> None:
         dal.conn_string = 'sqlite:///:memory:'
         dal.connect()
+        prep_dal(dal.Session())
 
     def setUp(self) -> None:
         dal.session = dal.Session()
 
-
     def tearDown(self) -> None:
         dal.session.close()
+
+    def test_get_doctor(self):
+        repo = Repo(dal.session)
+        doctor = repo.get_doctor(id=100)
+
+        self.assertIsNotNone(doctor)
+        self.assertTrue(doctor.id, 100)
 
     def test_get_all_doctors(self):
         repo = Repo(dal.session)
         doctors = repo.get_all_doctors()
-        self.assertEquals(doctors, [])
+        self.assertEquals(len(doctors), 1)
+
+    def test_get_nonexist_doctor(self):
+        repo = Repo(dal.session)
+        doctor = repo.get_doctor(id=-20000)
+        self.assertIsNone(doctor)
+
+    def test_get_job(self):
+        repo = Repo(dal.session)
+        job = repo.get_incartjob(id='1234567890')
+        self.assertIsNotNone(job)
+
+    def test_add_job(self):
+        job: IncartJob = IncartJob()
+        job.id = '0987654321'
+        job.snippet = 'test job'
+        repo = Repo(dal.session)
+        result = repo.add_incartjob(job)
+        self.assertTrue(result["ok"])
+
+
+# подготовка тестовой БД
+def prep_dal(session: orm.session.Session):
+    doctor = Doctor(id=100, name='test doctor')
+    session.add(doctor)
+
+    job: IncartJob = IncartJob()
+    job.id = '1234567890'
+    job.snippet = 'test job'
+    session.add(job)
+
+    session.commit()
 
 
 if __name__ == '__main__':
