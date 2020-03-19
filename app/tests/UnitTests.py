@@ -132,7 +132,6 @@ class RepoTests(unittest.TestCase):
         mydal.session.close()
         self.assertEqual(job.snippet, 'привет')
 
-
     def change_job(self, job: IncartJob, snippet: str, dal: DataAccessLayer) -> None:
         dal.session = dal.Session()
         job.snippet = snippet
