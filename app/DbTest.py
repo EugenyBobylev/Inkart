@@ -24,16 +24,17 @@ def add_job(id: str) -> None:
     dal.session.commit()
     print(f'{job.id=}; {job.snippet=}; {job.candidate_id=}; {job.doctor_id=}')
     dal.session.close()
+    print(f'{job.id=}; {job.snippet=}; {job.candidate_id=}; {job.doctor_id=}')
     print('job added successful')
 
 
 if __name__ == "__main__":
     dal.connect()
-    add_job('987654321')
+    add_job('9876543210')
 
-    job_id = '987654321'
-    t: Thread = Thread(target=print_job, args=(job_id,))
-    t.start()
-    t.join()
+    #job_id = '987654321'
+    #t: Thread = Thread(target=print_job, args=(job_id,))
+    #t.start()
+    #t.join()
     print("exit")
 

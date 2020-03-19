@@ -139,7 +139,7 @@ class DataAccessLayer:
     def connect(self):
         self.engine = create_engine(self.conn_string)
         Base.metadata.create_all(self.engine)
-        self.Session = sessionmaker(bind=self.engine)
+        self.Session = sessionmaker(bind=self.engine, expire_on_commit=False)
         self.session = self.Session()
 
     @contextmanager
