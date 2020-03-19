@@ -28,18 +28,17 @@ def check_new_email():
         log_info("run: check_new_email, no new email")
     else:
         log_info(f"run: check_new_email, has new email(s)")
-        dal.session = dal.Session()
-        repo = Repo(dal.session)
-        for message in new_messages:
-            job = IncartJob.from_json(message)
-            result = repo.add_incartjob(job)
-            if result['ok']:
-                logger.info(f"{job}")
-                job_queue.put(job)
-                # mark e-mail message as readed
-                labels = {"removeLabelIds":  ['UNREAD'], "addLabelIds": []}
-                modify_message(srv, "me", message["id"], labels)
-        dal.session.close()
+        with dal.session_scope() as session:
+            repo = Repo(session)
+            for message in new_messages:
+                job = IncartJob.from_json(message)
+                result = repo.add_incartjob(job)
+                if result['ok']:
+                    logger.info(f"{job}")
+                    job_queue.put(job)
+                    # mark e-mail message as readed
+                    labels = {"removeLabelIds":  ['UNREAD'], "addLabelIds": []}
+                    modify_message(srv, "me", message["id"], labels)
 
 
 @tl.job(interval=timedelta(seconds=5))
@@ -50,13 +49,13 @@ def check_job_queue():
         t = threading.Thread(target=run_job, args=(job,))
         t.start()
 
+
 # записать изменения состояния задачи в БД
 def update_job(job: IncartJob) -> bool:
     log_info("run: update_job")
-    dal.session = dal.Session()
-    repo = Repo(dal.session)
-    result = repo.update_incartjob(job)
-    dal.session.close()
+    with dal.session_scope() as session:
+        repo = Repo(session)
+        result = repo.update_incartjob(job)
     log_info(f"run: update_job, result={result['ok']}")
     return result['ok']
 
@@ -66,14 +65,16 @@ def run_job(job: IncartJob) -> None:
     if job.doctor_id is None:
         find_doctor(job)
     if job.doctor_id is not None:
-        update_job(job)
+        # update_job(job)
         send_job(job)
+        # update_job(job)
     if job.job_finish_id is None:
         send_rejection(job)  # послать отказ
     if job.job_finished is not None:
         send_success(job)    # послать подтверждение выполнения
         job.closed = datetime.now().astimezone(timezone.utc)
-        update_job()
+        # update_job()
+    print(job)
 
 
 def send_whatsapp_message(msg):
@@ -200,6 +201,7 @@ def log_info(msg: str):
 
 if __name__ == "__main__":
     logger = create_logger()
+    dal.connect()
     # Проверка цикла работы задания
     # myjob = IncartJob()
     # myjob.id = '170c3a9ba451cd9e'
@@ -207,4 +209,4 @@ if __name__ == "__main__":
     # logger.info('помещаем задание в очередь')
     # job_queue.put(myjob)
     # check_job_queue()
-    # tl.start(block=True)
+    tl.start(block=True)
