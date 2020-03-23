@@ -34,7 +34,7 @@ def check_new_email():
                 job = IncartJob.from_json(message)
                 result = repo.add_incartjob(job)
                 if result['ok']:
-                    logger.info(f"{job}")
+                    logger.info(f"job added to db {job}")
                     job_queue.put(job)
                     # mark e-mail message as readed
                     labels = {"removeLabelIds":  ['UNREAD'], "addLabelIds": []}
@@ -64,16 +64,17 @@ def update_job(job: IncartJob) -> bool:
 def run_job(job: IncartJob) -> None:
     if job.doctor_id is None:
         find_doctor(job)
+    update_job(job)
     if job.doctor_id is not None:
-        # update_job(job)
         send_job(job)
-        # update_job(job)
+    print(job)
+    update_job(job)
     if job.job_finish_id is None:
         send_rejection(job)  # послать отказ
     if job.job_finished is not None:
         send_success(job)    # послать подтверждение выполнения
         job.closed = datetime.now().astimezone(timezone.utc)
-        # update_job()
+    update_job(job)
     print(job)
 
 
@@ -91,11 +92,11 @@ def get_candidate() -> int:
 def find_doctor(job: IncartJob) -> None:
     log_info(("run: find_doctor"))
     # get free candidate for processing the result
-    candidat_id = get_candidate()
+    job.candidate_id = get_candidate()
     # send a request for processing the result
     msg = "Компания \"Инкарт\" предлагает Вам заказ на обработку результата исследования.\n" \
           "Если Вы готовы выполнить заказ, пришлите ответ со словом: Да."
-    result = post_api_message(candidat_id, msg)
+    result = post_api_message(job.candidate_id, msg)
     status = result["status"]
     if status != 'success':
         return
@@ -104,19 +105,20 @@ def find_doctor(job: IncartJob) -> None:
     job.request_id = data['message_id']
     job.request_started = datetime.now().astimezone(timezone.utc)
     job.request_time_estimate = job.request_started + timedelta(hours=1)
+    update_job(job)
     # ждем подтверждения запроса
-    confirm_request(job, candidat_id)
+    confirm_request(job)
     if job.answered is None:
         return
-    job.doctor_id = candidat_id
+    job.doctor_id = job.candidate_id
 
 
-def confirm_request(job: IncartJob, candidat_id: int) -> None:
+def confirm_request(job: IncartJob) -> None:
     log_info("run: confirm_request")
     now = datetime.now().astimezone(timezone.utc)
     while now < job.request_time_estimate:
         log_info("run: confirm_request while")
-        val = get_api_messages(candidat_id, job.request_started)
+        val = get_api_messages(job.candidate_id, job.request_started)
         status = val['status']
         if status != 'success':
             continue
@@ -144,6 +146,7 @@ def send_job(job: IncartJob) -> None:
     job.job_start_id = data['message_id']
     job.job_started = datetime.now().astimezone(timezone.utc)
     job.job_time_estimate = job.job_started + timedelta(hours=2, minutes=10)
+    update_job(job)
     # ждем результат
     wait_processing(job)
 
@@ -161,7 +164,7 @@ def wait_processing(job: IncartJob) -> None:
         msg_date: datetime = parser.parse(last_msg.created)
         if job.job_started < msg_date < job.job_time_estimate:
             job.job_finish_id = last_msg.id
-            job.job_finished = last_msg.created
+            job.job_finished = parser.parse(last_msg.created)  # Это строка
             break
         time.sleep(30.0)
 
@@ -208,5 +211,6 @@ if __name__ == "__main__":
     # myjob.snippet = 'тестовое задание'
     # logger.info('помещаем задание в очередь')
     # job_queue.put(myjob)
-    # check_job_queue()
-    tl.start(block=True)
+    check_new_email()
+    check_job_queue()
+    # tl.start(block=True)
