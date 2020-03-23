@@ -64,9 +64,9 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(config["DEFAULT"].getint("check_new_email_interval"), 15)
         self.assertEqual(config["DEFAULT"].getint("check_job_queue_interval"), 5)
         self.assertEqual(config["DEFAULT"].getint("wait_confirm_request"), 30)
-        self.assertEqual(config["DEFAULT"].getfloat("request_time_estimate"), 1.0)
-        self.assertEqual(config["DEFAULT"].getint("wait_processing"), 30)
-        self.assertEqual(config["DEFAULT"].getfloat("job_time_estimate"), 2.0)
+        self.assertEqual(config["DEFAULT"].getfloat("request_time_estimate"), 30.0)
+        self.assertEqual(config["DEFAULT"].getint("wait_job_processing"), 30)
+        self.assertEqual(config["DEFAULT"].getfloat("job_time_estimate"), 120.0)
 
 
 class RepoTests(unittest.TestCase):

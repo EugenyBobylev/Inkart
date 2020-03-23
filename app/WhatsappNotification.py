@@ -1,4 +1,6 @@
+import configparser
 import logging
+import os
 import queue
 import time
 import threading
@@ -23,11 +25,24 @@ check_new_email_interval = 15  # интервал в сек. проверки э
 check_job_queue_interval = 5   # интервал в сек. проверки появления в очереди нового задания на обработку
 wait_confirm_request = 30      # интервал в сек. проверки подтверждения согласия на расшифировку
 request_time_estimate = 30.0   # время ожидания в мин. согласия на обработку задания, после отправки запроса
-wait_processing = 30           # интервал в сек. проверки окончания обработки доктором задания
+wait_job_processing = 30           # интервал в сек. проверки окончания обработки доктором задания
 job_time_estimate = 120.0      # время ожидания в мин. окончания обработки задания доктором
 
 
-@tl.job(interval=timedelta(seconds=15))
+def init():
+    ini = os.path.join(Config.BASEPATH, 'incart.ini')
+    if os.path.isfile(ini):
+        config = configparser.ConfigParser()
+        config.read(ini)
+        check_new_email_interval = config["DEFAULT"].getint("check_new_email_interval")
+        check_job_queue_interval = config["DEFAULT"].getint("check_job_queue_interval")
+        wait_confirm_request = config["DEFAULT"].getint("wait_confirm_request")
+        request_time_estimate = config["DEFAULT"].getfloat("request_time_estimate")
+        wait_processing = config["DEFAULT"].getint("wait_processing")
+        job_time_estimate = config["DEFAULT"].getfloat("job_time_estimate")
+
+
+@tl.job(interval=timedelta(seconds=check_new_email_interval))
 def check_new_email():
     srv = get_service()
     new_messages = get_all_unread_emails(srv)
@@ -49,7 +64,7 @@ def check_new_email():
                     modify_message(srv, "me", message["id"], labels)
 
 
-@tl.job(interval=timedelta(seconds=5))
+@tl.job(interval=timedelta(seconds=check_job_queue_interval))
 def check_job_queue():
     if not job_queue.empty():
         log_info("run: check_job_queue")
@@ -112,7 +127,7 @@ def find_doctor(job: IncartJob) -> None:
     log_info(f"data={data}")
     job.request_id = data['message_id']
     job.request_started = datetime.now().astimezone(timezone.utc)
-    job.request_time_estimate = job.request_started + timedelta(minutes=60)
+    job.request_time_estimate = job.request_started + timedelta(minutes=request_time_estimate)
     update_job(job)
     # ждем подтверждения запроса
     confirm_request(job)
@@ -139,7 +154,7 @@ def confirm_request(job: IncartJob) -> None:
                     job.request_answer_id = last_msg.id
                     job.answered = msg_date
                 break
-        time.sleep(30.0)
+        time.sleep(wait_confirm_request)
 
 
 def send_job(job: IncartJob) -> None:
@@ -153,7 +168,7 @@ def send_job(job: IncartJob) -> None:
     data = result["data"]
     job.job_start_id = data['message_id']
     job.job_started = datetime.now().astimezone(timezone.utc)
-    job.job_time_estimate = job.job_started + timedelta(minutes=120)
+    job.job_time_estimate = job.job_started + timedelta(minutes=job_time_estimate)
     update_job(job)
     # ждем результат
     wait_processing(job)
@@ -174,7 +189,7 @@ def wait_processing(job: IncartJob) -> None:
             job.job_finish_id = last_msg.id
             job.job_finished = parser.parse(last_msg.created)  # Это строка
             break
-        time.sleep(30.0)
+        time.sleep(wait_job_processing)
 
 
 def send_rejection(job: IncartJob) -> None:
@@ -213,6 +228,7 @@ def log_info(msg: str):
 if __name__ == "__main__":
     logger = create_logger()
     dal.connect()
+    init()
     # Проверка цикла работы задания
     # myjob = IncartJob()
     # myjob.id = '170c3a9ba451cd9e'
@@ -221,4 +237,4 @@ if __name__ == "__main__":
     # job_queue.put(myjob)
     check_new_email()
     check_job_queue()
-    # tl.start(block=True)
+    #tl.start(block=True)
