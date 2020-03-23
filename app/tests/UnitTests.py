@@ -1,3 +1,5 @@
+import configparser
+import os
 import threading
 import unittest
 from unittest.mock import patch, Mock
@@ -34,7 +36,7 @@ class MyTestCase(unittest.TestCase):
         ], 'meta': {'total': 2, 'limit': 20, 'offset': 0},
            'status': 'success'
         }
-        confirm_request(job=self.job, candidat_id=1)
+        confirm_request(job=self.job)
         self.assertEqual(self.job.request_answer_id, 360837004)
         self.assertTrue(self.job.answered is not None)
 
@@ -48,6 +50,23 @@ class MyTestCase(unittest.TestCase):
         dal = DataAccessLayer()
         con_string = Config.SQLALCHEMY_DATABASE_URI
         self.assertEqual(con_string, dal.conn_string)
+
+    def test_incart_ini_exists(self):
+        path = os.path.join(Config.BASEPATH, 'incart.ini')
+        ok = os.path.isfile(path)
+        self.assertTrue(ok)
+
+    def test_incart_ini_read(self):
+        ini = os.path.join(Config.BASEPATH, 'incart.ini')
+        config = configparser.ConfigParser()
+        config.read(ini)
+
+        self.assertEqual(config["DEFAULT"].getint("check_new_email_interval"), 15)
+        self.assertEqual(config["DEFAULT"].getint("check_job_queue_interval"), 5)
+        self.assertEqual(config["DEFAULT"].getint("wait_confirm_request"), 30)
+        self.assertEqual(config["DEFAULT"].getfloat("request_time_estimate"), 1.0)
+        self.assertEqual(config["DEFAULT"].getint("wait_processing"), 30)
+        self.assertEqual(config["DEFAULT"].getfloat("job_time_estimate"), 2.0)
 
 
 class RepoTests(unittest.TestCase):
