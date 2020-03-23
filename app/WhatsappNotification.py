@@ -8,6 +8,7 @@ from dateutil import parser
 from timeloop import Timeloop
 from datetime import timedelta, timezone, datetime
 
+from config import Config
 from app.GMailApi import get_service, get_all_unread_emails, modify_message
 from app.WhatsappChanel import post_api_message, get_api_messages
 from app.model import IncartJob, ChatMessage, dal
@@ -17,6 +18,13 @@ tl = Timeloop()
 job_queue = queue.Queue()
 logger = None
 dal.connect()
+
+check_new_email_interval = 15  # интервал в сек. проверки электронной почты на появление нового задания
+check_job_queue_interval = 5   # интервал в сек. проверки появления в очереди нового задания на обработку
+wait_confirm_request = 30      # интервал в сек. проверки подтверждения согласия на расшифировку
+request_time_estimate = 30.0   # время ожидания в мин. согласия на обработку задания, после отправки запроса
+wait_processing = 30           # интервал в сек. проверки окончания обработки доктором задания
+job_time_estimate = 120.0      # время ожидания в мин. окончания обработки задания доктором
 
 
 @tl.job(interval=timedelta(seconds=15))
@@ -104,7 +112,7 @@ def find_doctor(job: IncartJob) -> None:
     log_info(f"data={data}")
     job.request_id = data['message_id']
     job.request_started = datetime.now().astimezone(timezone.utc)
-    job.request_time_estimate = job.request_started + timedelta(hours=1)
+    job.request_time_estimate = job.request_started + timedelta(minutes=60)
     update_job(job)
     # ждем подтверждения запроса
     confirm_request(job)
@@ -145,7 +153,7 @@ def send_job(job: IncartJob) -> None:
     data = result["data"]
     job.job_start_id = data['message_id']
     job.job_started = datetime.now().astimezone(timezone.utc)
-    job.job_time_estimate = job.job_started + timedelta(hours=2, minutes=10)
+    job.job_time_estimate = job.job_started + timedelta(minutes=120)
     update_job(job)
     # ждем результат
     wait_processing(job)
