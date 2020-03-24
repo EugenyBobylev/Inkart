@@ -3,9 +3,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import List
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 
 from config import Config
 
@@ -42,6 +42,8 @@ class Doctor(Base):
     extra_comment_2 = Column("extra_comment_2", String(512))
     extra_comment_3 = Column("extra_comment_3", String(512))
 
+    jobdoctor = relationship("JobDoctor")
+
     def __repr__(self):
         return f'id={self.id}; name="{self.name}"; phone={self.phone}, ' \
                f'assigned_name="{self.assigned_name}", comment={self.comment}'
@@ -65,10 +67,12 @@ class IncartJob(Base, DataDict):
     job_start_id = Column("job_start_id", Integer)  # id whatsapp message отправленного доктору с заданием нарасшифровку
     job_started = Column("job_started", DateTime)  # время отправки
     job_time_estimate = Column("job_time_estimate", Integer) # Ожидаемое время окончания расшифровки
-
     job_finish_id = Column("job_finish_id", Integer)  # id whatsapp message с подтверждением окончания расшифровки
+
     job_finished = Column("job_finished", DateTime)  # метка времени UTC с подтверждением окончания расшифровки
     closed = Column("closed", DateTime)    # метка времени UTC закрытия задания
+
+    jobdoctor = relationship("JobDoctor")
 
     def __init__(self):
         self.id = ''
@@ -96,6 +100,26 @@ class IncartJob(Base, DataDict):
                f'job_started={self.job_started}; job_time_estimate={self.job_time_estimate}; ' \
                f'job_finish_id={self.job_finish_id}; job_finished={self.job_finished}; closed={self.closed}'
 
+
+class JobDoctor(Base):
+    __tablename__ = "jobdoctors"
+
+    job_id = Column("job_id", String(16), ForeignKey('incartjobs.id'), primary_key=True)
+    doctor_id = Column("id", Integer, ForeignKey('doctors.id'), primary_key=True, autoincrement=False)
+    candidate_id = Column("candidate_id", Integer)  # id кандидата
+    request_id = Column("request_id", Integer)      # id whatsapp message запроса доктору на расшифровку
+    request_started = Column("request_started", DateTime)  # метка времени UTC отправки запроса доктору на расшифровку
+    request_time_estimate = Column("request_time_estimate", DateTime)  # метка времени UTC ожидания получения подтверждения от доктора
+    request_answer_id = Column("request_answer_id", Integer)  # id whatsapp message получения согласия на расшифровку
+    answered = Column("answered", DateTime)  # метка времени UTC получения согласия на расшифровку
+
+    job_start_id = Column("job_start_id", Integer)  # id whatsapp message отправленного доктору с заданием нарасшифровку
+    job_started = Column("job_started", DateTime)  # время отправки
+    job_time_estimate = Column("job_time_estimate", Integer) # Ожидаемое время окончания расшифровки
+    job_finish_id = Column("job_finish_id", Integer)  # id whatsapp message с подтверждением окончания расшифровки
+
+    doctor = relationship("Doctor", back_populates='jobdoctor')
+    job = relationship("IncartJob", back_populates='jobdoctor')
 
 # chat2desk whatsapp messah=ge
 @dataclass
