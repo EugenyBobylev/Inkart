@@ -74,7 +74,7 @@ class JobDoctor(Base):
     __tablename__ = "jobdoctors"
 
     job_id = Column("job_id", String(16), ForeignKey('incartjobs.id'), primary_key=True)
-    doctor_id = Column("id", Integer, ForeignKey('doctors.id'), primary_key=True, autoincrement=False)
+    doctor_id = Column("doctor_id", Integer, ForeignKey('doctors.id'), primary_key=True, autoincrement=False)
     request_id = Column("request_id", Integer)      # id whatsapp message запроса доктору на расшифровку
     request_started = Column("request_started", DateTime)  # метка времени UTC отправки запроса доктору на расшифровку
     request_time_estimate = Column("request_time_estimate", DateTime)  # метка времени UTC ожидания получения подтверждения от доктора
