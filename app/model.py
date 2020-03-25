@@ -56,20 +56,7 @@ class IncartJob(Base, DataDict):
     id = Column("id", String(16), primary_key=True)
     snippet = Column("snippet", String(512))  # текст сообщения
     created = Column("created", DateTime, default=datetime.now().astimezone(timezone.utc))     # когда задание создано UTC
-    candidate_id = Column("candidate_id", Integer)  # id кандидата
-    request_id = Column("request_id", Integer)      # id whatsapp message запроса доктору на расшифровку
-    request_started = Column("request_started", DateTime)  # метка времени UTC отправки запроса доктору на расшифровку
-    request_time_estimate = Column("request_time_estimate", DateTime)  # метка времени UTC ожидания получения подтверждения от доктора
-    request_answer_id = Column("request_answer_id", Integer)  # id whatsapp message получения согласия на расшифровку
-    answered = Column("answered", DateTime)  # метка времени UTC получения согласия на расшифровку
-
     doctor_id = Column("doctor_id", Integer)        # исполнитель
-    job_start_id = Column("job_start_id", Integer)  # id whatsapp message отправленного доктору с заданием нарасшифровку
-    job_started = Column("job_started", DateTime)  # время отправки
-    job_time_estimate = Column("job_time_estimate", Integer) # Ожидаемое время окончания расшифровки
-    job_finish_id = Column("job_finish_id", Integer)  # id whatsapp message с подтверждением окончания расшифровки
-
-    job_finished = Column("job_finished", DateTime)  # метка времени UTC с подтверждением окончания расшифровки
     closed = Column("closed", DateTime)    # метка времени UTC закрытия задания
 
     jobdoctors = relationship("JobDoctor")
