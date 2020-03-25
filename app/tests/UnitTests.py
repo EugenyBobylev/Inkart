@@ -2,19 +2,20 @@ import configparser
 import os
 import threading
 import unittest
+from typing import List
 from unittest.mock import patch, Mock
 from datetime import datetime, timezone, timedelta
 
 from sqlalchemy import orm
 
 from app.WhatsappChanel import get_api_message
-from app.WhatsappNotification import confirm_request
-from app.model import dal, IncartJob, Doctor, DataAccessLayer
+from app.WhatsappNotification import confirm_request, get_candidate
+from app.model import dal, IncartJob, Doctor, DataAccessLayer, JobDoctor
 from app.repo import Repo
 from config import Config
 
 
-class MyTestCase(unittest.TestCase):
+class TestsApp(unittest.TestCase):
     def setUp(self) -> None:
         self.job = IncartJob()
         self.job.id = '170c3a9ba451cd9e'
@@ -68,13 +69,18 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(config["DEFAULT"].getint("wait_job_processing"), 30)
         self.assertEqual(config["DEFAULT"].getfloat("job_time_estimate"), 120.0)
 
+    def test_get_cadidate(self):
+        doctor: Doctor = get_candidate()
+        self.assertIsNotNone(doctor)
+        self.assertTrue(isinstance(doctor, Doctor))
 
 class RepoTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         dal.conn_string = 'sqlite:///:memory:'
         dal.connect()
-        prep_dal(dal.Session())
+        dal.session = dal.Session()
+        prep_db(dal.session)
 
     def setUp(self) -> None:
         dal.session = dal.Session()
@@ -84,15 +90,17 @@ class RepoTests(unittest.TestCase):
 
     def test_get_doctor(self):
         repo = Repo(dal.session)
-        doctor = repo.get_doctor(id=100)
+        doctor = repo.get_doctor(id=1)
 
         self.assertIsNotNone(doctor)
-        self.assertTrue(doctor.id, 100)
+        self.assertTrue(doctor.id, 1)
 
     def test_get_all_doctors(self):
         repo = Repo(dal.session)
         doctors = repo.get_all_doctors()
-        self.assertEquals(len(doctors), 1)
+        self.assertEquals(len(doctors), 2)
+        self.assertTrue(doctors[0].id, 1)
+        self.assertTrue(doctors[1], 2)
 
     def test_get_nonexist_doctor(self):
         repo = Repo(dal.session)
@@ -101,74 +109,120 @@ class RepoTests(unittest.TestCase):
 
     def test_get_job(self):
         repo = Repo(dal.session)
-        job = repo.get_incartjob(id='1234567890')
+        job = repo.get_incartjob(id='1')
         self.assertIsNotNone(job)
-        self.assertEqual('test job', job.snippet)
+        self.assertEqual('job_1', job.snippet)
 
     def test_add_job(self):
         job: IncartJob = IncartJob()
-        job.id = '0987654321'
-        job.snippet = 'test job'
+        job.id = '3'
+        job.snippet = 'job_3'
         repo = Repo(dal.session)
-        result = repo.add_incartjob(job)
-        self.assertTrue(result["ok"])
+        ok: bool = repo.add_incartjob(job)
+        self.assertTrue(ok)
 
     def test_update_job(self):
         repo = Repo(dal.session)
-        job1 = repo.get_incartjob(id='1234567890')
+        job1 = repo.get_incartjob(id='1')
         job1.doctor_id = 1
-        result = repo.update_incartjob(job1)
+        ok: bool = repo.update_incartjob(job1)
 
-        self.assertTrue(result['ok'])
-        job2 = repo.get_incartjob(id='1234567890')
+        self.assertTrue(ok)
+        job2 = repo.get_incartjob(id='1')
         self.assertEqual(job2.doctor_id, 1)
 
-    def test_thread_update_job(self):
-        mydal= DataAccessLayer()
-        mydal.conn_string = 'sqlite:///:memory:'
-        mydal.connect()
+    def test_get_jobdoctor(self):
+        repo = Repo(dal.session)
+        jobdoctor = repo.get_jobdoctor(doctor_id=1, job_id='1')
+        self.assertIsNotNone(jobdoctor)
+        self.assertTrue(isinstance(jobdoctor, JobDoctor))
+        self.assertTrue(jobdoctor.doctor_id == 1)
+        self.assertTrue(jobdoctor.job_id == '1')
+        self.assertTrue(jobdoctor.doctor.id == 1)
+        self.assertTrue(jobdoctor.job.id == '1')
 
-        job = IncartJob()
-        job.id = '123'
-        job.snippet = 'test job'
-        mydal.session.add(job)
-        mydal.session.commit()
-        mydal.session.close()
+    def test_doctor_relations(self):
+        repo = Repo(dal.session)
+        doctor: Doctor = repo.get_doctor(id=1)
+        self.assertIsNotNone(doctor)
+        self.assertIsNotNone(doctor.jobdoctors)
+        self.assertTrue(isinstance(doctor.jobdoctors, List))
+        self.assertTrue(len(doctor.jobdoctors), 1)
 
-        mydal.session = mydal.Session()
-        job = mydal.session.query(IncartJob).filter(IncartJob.id == '123').first()
-        mydal.session.close()
-        self.assertEqual(job.snippet, 'test job')
+    def test_job_relations(self):
+        repo = Repo(dal.session)
+        job1 = repo.get_incartjob(id='1')
+        self.assertIsNotNone(job1)
+        self.assertIsNotNone(job1.jobdoctors)
+        self.assertTrue(isinstance(job1.jobdoctors, List))
+        self.assertTrue(len(job1.jobdoctors), 2)
 
-        t = threading.Thread(target=self.change_job, args=(job, 'привет', mydal))
-        t.start()
-        t.join()
-        # self.change_job(job, 'привет', mydal)
-        # job = mydal.session.query(IncartJob).filter(IncartJob.id == '123').first()
-
-        mydal.session = mydal.Session()
-        job = mydal.session.query(IncartJob).filter(IncartJob.id == '123').first()
-        mydal.session.close()
-        self.assertEqual(job.snippet, 'привет')
-
-    def change_job(self, job: IncartJob, snippet: str, dal: DataAccessLayer) -> None:
-        dal.session = dal.Session()
-        job.snippet = snippet
-        dal.session.add(job)
+    def test_relations_created_doctor(self):
+        doctor = Doctor(id=200, name='Пирогов')
         dal.session.commit()
-        dal.session.close()
+        self.assertIsNotNone(doctor.jobdoctors)
+        self.assertTrue(isinstance(doctor.jobdoctors, List))
+        self.assertEqual(len(doctor.jobdoctors), 0)
+
+    def test_update_jobdoctor(self):
+        repo = Repo(dal.session)
+        jobdoctor = repo.get_jobdoctor(doctor_id=1, job_id='1')
+        jobdoctor.request_id = 23
+        jobdoctor.request_started = datetime.now().astimezone(timezone.utc)
+        ok: bool = repo.update_jobdoctor(jobdoctor)
+        self.assertTrue(ok)
+
+    def test_find_jobdoctor(self):
+        repo = Repo(dal.session)
+        job = repo.get_incartjob(id='1')
+        last_jobdoctor = job.jobdoctors[-1]
+
+        self.assertEqual(len(job.jobdoctors), 2)
+        self.assertIsNotNone(last_jobdoctor)
+
+    def test_create_jobdoctor(self):
+        repo = Repo(dal.session)
+        job = IncartJob()
+        job.id = '200'
+        job.snippet = 'test job'
+        doctor = repo.get_doctor(id=1)
+
+        jobdoctor = JobDoctor()
+        jobdoctor.job = job
+        jobdoctor.doctor = doctor
+
+        ok1: bool = repo.commit()
+        self.assertTrue(ok1)
+        jobdoctor2 = repo.get_jobdoctor(job_id=job.id, doctor_id=doctor.id)
+        self.assertIsNotNone(jobdoctor2)
+        self.assertEqual(jobdoctor.doctor_id, jobdoctor2.doctor_id)
+        self.assertTrue(jobdoctor.job_id, jobdoctor2.job_id)
+        self.assertNotEqual(jobdoctor, jobdoctor2)
 
 
 # подготовка тестовой БД
-def prep_dal(session: orm.session.Session):
-    doctor = Doctor(id=100, name='test doctor')
-    session.add(doctor)
+def prep_db(session: orm.session.Session):
+    doctor1 = Doctor(id=1, name='Айболит')
+    doctor2 = Doctor(id=2, name='Сеченов')
+    session.bulk_save_objects([doctor1, doctor2])
+    session.commit()
 
-    job: IncartJob = IncartJob()
-    job.id = '1234567890'
-    job.snippet = 'test job'
-    session.add(job)
+    job1 = IncartJob()
+    job1.id = '1'; job1.snippet = 'job_1'
+    job2 = IncartJob()
+    job2.id = '2'; job2.snippet = 'job_2'
+    session.bulk_save_objects([job1, job2])
+    session.commit()
 
+    job_doctor: JobDoctor = JobDoctor(job_id="1", doctor_id=1)
+    job_doctor.request_id = '1'
+    session.add(job_doctor)
+    session.commit()
+
+    job_doctor2 = JobDoctor(job_id="1", doctor_id=2)
+    job_doctor2.request_id = '2'
+    job_doctor2.request_sended = datetime.utcnow()
+    session.add(job_doctor2)
     session.commit()
 
 

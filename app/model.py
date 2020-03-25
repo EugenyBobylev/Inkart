@@ -42,7 +42,7 @@ class Doctor(Base):
     extra_comment_2 = Column("extra_comment_2", String(512))
     extra_comment_3 = Column("extra_comment_3", String(512))
 
-    jobdoctor = relationship("JobDoctor")
+    jobdoctors = relationship("JobDoctor")
 
     def __repr__(self):
         return f'id={self.id}; name="{self.name}"; phone={self.phone}, ' \
@@ -55,7 +55,7 @@ class IncartJob(Base, DataDict):
 
     id = Column("id", String(16), primary_key=True)
     snippet = Column("snippet", String(512))  # текст сообщения
-    created = Column("created", DateTime)     # когда задание создано UTC
+    created = Column("created", DateTime, default=datetime.now().astimezone(timezone.utc))     # когда задание создано UTC
     candidate_id = Column("candidate_id", Integer)  # id кандидата
     request_id = Column("request_id", Integer)      # id whatsapp message запроса доктору на расшифровку
     request_started = Column("request_started", DateTime)  # метка времени UTC отправки запроса доктору на расшифровку
@@ -72,7 +72,7 @@ class IncartJob(Base, DataDict):
     job_finished = Column("job_finished", DateTime)  # метка времени UTC с подтверждением окончания расшифровки
     closed = Column("closed", DateTime)    # метка времени UTC закрытия задания
 
-    jobdoctor = relationship("JobDoctor")
+    jobdoctors = relationship("JobDoctor")
 
     def __init__(self):
         self.id = ''
@@ -118,8 +118,8 @@ class JobDoctor(Base):
     job_time_estimate = Column("job_time_estimate", Integer) # Ожидаемое время окончания расшифровки
     job_finish_id = Column("job_finish_id", Integer)  # id whatsapp message с подтверждением окончания расшифровки
 
-    doctor = relationship("Doctor", back_populates='jobdoctor')
-    job = relationship("IncartJob", back_populates='jobdoctor')
+    doctor: Doctor = relationship("Doctor", back_populates='jobdoctors')
+    job: IncartJob = relationship("IncartJob", back_populates='jobdoctors')
 
 # chat2desk whatsapp messah=ge
 @dataclass

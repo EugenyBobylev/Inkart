@@ -13,7 +13,7 @@ from datetime import timedelta, timezone, datetime
 from config import Config
 from app.GMailApi import get_service, get_all_unread_emails, modify_message
 from app.WhatsappChanel import post_api_message, get_api_messages
-from app.model import IncartJob, ChatMessage, dal
+from app.model import IncartJob, ChatMessage, dal, Doctor, JobDoctor
 from app.repo import Repo
 
 tl = Timeloop()
@@ -25,7 +25,7 @@ check_new_email_interval = 15  # интервал в сек. проверки э
 check_job_queue_interval = 5   # интервал в сек. проверки появления в очереди нового задания на обработку
 wait_confirm_request = 30      # интервал в сек. проверки подтверждения согласия на расшифировку
 request_time_estimate = 30.0   # время ожидания в мин. согласия на обработку задания, после отправки запроса
-wait_job_processing = 30           # интервал в сек. проверки окончания обработки доктором задания
+wait_job_processing = 30       # интервал в сек. проверки окончания обработки доктором задания
 job_time_estimate = 120.0      # время ожидания в мин. окончания обработки задания доктором
 
 
@@ -76,11 +76,22 @@ def check_job_queue():
 # записать изменения состояния задачи в БД
 def update_job(job: IncartJob) -> bool:
     log_info("run: update_job")
+    ok: bool = False
     with dal.session_scope() as session:
         repo = Repo(session)
-        result = repo.update_incartjob(job)
-    log_info(f"run: update_job, result={result['ok']}")
-    return result['ok']
+        ok = repo.update_incartjob(job)
+    log_info(f"run: update_job, result={ok}")
+    return ok
+
+
+def update_jobdoctor(jobdoctor: JobDoctor) -> bool:
+    log_info("run: update_jobdoctor")
+    ok: bool = False
+    with dal.session_scope() as session:
+        repo = Repo(session)
+        ok: bool = repo.update_jobdoctor(jobdoctor)
+    log_info(f"run: update_jobdoctor, result={ok}")
+    return ok
 
 
 # Запустить задачу на выполнение
@@ -109,39 +120,59 @@ def send_whatsapp_message(msg):
 # предложить кандидата для выполнения работы
 def get_candidate() -> int:
     log_info("run: get_candidate")
-    return 96881373  # Бобылев Е.А. 96881373
+    candidate: Doctor = None
+    with dal.session_scope() as session:
+        repo = Repo(session)
+        candidate = repo.get_doctor(96881373)  # Бобылев Е.А. 96881373
+    return candidate
 
 
-def find_doctor(job: IncartJob) -> None:
+def find_doctor(job: IncartJob) -> JobDoctor:
     log_info(("run: find_doctor"))
     # get free candidate for processing the result
-    job.candidate_id = get_candidate()
+    candidate: Doctor = get_candidate()
+    job.candidate_id = candidate.id
+
+    jobdoctor = JobDoctor()
+    jobdoctor.doctor = candidate
+    jobdoctor.job = job
+    with dal.session_scope() as session:
+        session.add(jobdoctor)
+        session.commit()
+
     # send a request for processing the result
     msg = "Компания \"Инкарт\" предлагает Вам заказ на обработку результата исследования.\n" \
           "Если Вы готовы выполнить заказ, пришлите ответ со словом: Да."
     result = post_api_message(job.candidate_id, msg)
     status = result["status"]
     if status != 'success':
-        return
+        return jobdoctor
     data = result["data"]
     log_info(f"data={data}")
-    job.request_id = data['message_id']
-    job.request_started = datetime.now().astimezone(timezone.utc)
-    job.request_time_estimate = job.request_started + timedelta(minutes=request_time_estimate)
-    update_job(job)
+    jobdoctor.request_id = data['message_id']
+    jobdoctor.request_started = datetime.now().astimezone(timezone.utc)
+    jobdoctor.request_time_estimate = job.request_started + timedelta(minutes=request_time_estimate)
+    with dal.session_scope() as session:
+        session.add(jobdoctor)
+        session.commit()
+    # job.request_id = data['message_id']
+    # job.request_started = datetime.now().astimezone(timezone.utc)
+    # job.request_time_estimate = job.request_started + timedelta(minutes=request_time_estimate)
+    # update_job(job)
     # ждем подтверждения запроса
-    confirm_request(job)
-    if job.answered is None:
-        return
-    job.doctor_id = job.candidate_id
+    confirm_request(jobdoctor)
+    if jobdoctor.answered is not None:
+        job.doctor_id = candidate.id
+    return jobdoctor
 
 
-def confirm_request(job: IncartJob) -> None:
+def confirm_request(jobdoctor: JobDoctor) -> None:
     log_info("run: confirm_request")
     now = datetime.now().astimezone(timezone.utc)
-    while now < job.request_time_estimate:
+
+    while now < jobdoctor.request_time_estimate:
         log_info("run: confirm_request while")
-        val = get_api_messages(job.candidate_id, job.request_started)
+        val = get_api_messages(jobdoctor.candidate_id, jobdoctor.request_started)
         status = val['status']
         if status != 'success':
             continue
@@ -149,12 +180,13 @@ def confirm_request(job: IncartJob) -> None:
         if len(data) > 0:
             last_msg = ChatMessage.from_json(data[-1])
             msg_date: datetime = parser.parse(last_msg.created)
-            if job.request_started < msg_date < job.request_time_estimate:
+            if jobdoctor.request_started < msg_date < jobdoctor.request_time_estimate:
                 if last_msg.text.upper() == 'ДА':
-                    job.request_answer_id = last_msg.id
-                    job.answered = msg_date
+                    jobdoctor.request_answer_id = last_msg.id
+                    jobdoctor.answered = msg_date
                 break
         time.sleep(wait_confirm_request)
+    update_jobdoctor(jobdoctor)
 
 
 def send_job(job: IncartJob) -> None:

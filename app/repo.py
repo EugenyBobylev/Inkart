@@ -7,14 +7,14 @@ from typing import Dict, List
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import FlushError
 
-from app.model import DataAccessLayer, Doctor, IncartJob, dal
+from app.model import DataAccessLayer, Doctor, IncartJob, dal, JobDoctor
 
 
 class Repo(object):
     def __init__(self, session):
         self.session: sqlalchemy.orm.session.Session = session
 
-    def session_commit(self) -> bool:
+    def commit(self) -> bool:
         ok: bool = True
         try:
             self.session.commit()
@@ -25,7 +25,7 @@ class Repo(object):
             ok = False
         return ok
 
-    def add_doctor(self, data: Dict[str, object]) -> dict:
+    def add_doctor(self, data: Dict[str, object]) -> bool:
         doctor: Doctor = Doctor()
         for key in data:
             if hasattr(doctor, key):
@@ -36,10 +36,8 @@ class Repo(object):
                 setattr(doctor, key, value)
 
         self.session.add(doctor)
-        ok: bool = self.session_commit()
-        if not ok:
-            return {"ok": ok, "doctor": None}
-        return {"ok": ok, "doctor": doctor}
+        ok: bool = self.commit()
+        return ok
 
     def get_doctor(self, id: int) -> Doctor:
         doctor: Doctor = self.session.query(Doctor).filter(Doctor.id == id).first()
@@ -50,7 +48,7 @@ class Repo(object):
         doctor = self.get_doctor(id).first()
         if doctor is not None:
             self.session.delete(doctor)
-            ok = self.session_commit()
+            ok = self.commit()
         return ok
 
     def get_doctors_id(self) -> List[int]:
@@ -70,17 +68,25 @@ class Repo(object):
 
     def add_incartjob(self, job: IncartJob) -> dict:
         self.session.add(job)
-        ok: bool = self.session_commit()
+        ok: bool = self.commit()
         if not ok:
             return {"ok": ok, "job": None}
         return {"ok": ok, "job": job}
 
-    def update_incartjob(self, job: IncartJob) -> dict:
+    def update_incartjob(self, job: IncartJob) -> bool:
         self.session.add(job)
-        ok: bool = self.session_commit()
-        if not ok:
-            return {"ok": ok, "job": None}
-        return {"ok": ok, "job": job}
+        ok: bool = self.commit()
+        return ok
+
+    def get_jobdoctor(self, doctor_id: int, job_id: str) -> JobDoctor:
+        jobdoctor = self.session.query(JobDoctor)\
+            .filter(JobDoctor.doctor_id == doctor_id and JobDoctor.job_id == job_id).first()
+        return jobdoctor
+
+    def update_jobdoctor(self, jobdoctor: JobDoctor) -> bool:
+        self.session.add(jobdoctor)
+        ok: bool = self.commit()
+        return ok
 
 
 def to_utc_datetime(datetimestr) -> datetime:
