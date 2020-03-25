@@ -98,7 +98,7 @@ class RepoTests(unittest.TestCase):
     def test_get_all_doctors(self):
         repo = Repo(dal.session)
         doctors = repo.get_all_doctors()
-        self.assertEquals(len(doctors), 2)
+        self.assertEqual(len(doctors), 2)
         self.assertTrue(doctors[0].id, 1)
         self.assertTrue(doctors[1], 2)
 
@@ -207,10 +207,8 @@ def prep_db(session: orm.session.Session):
     session.bulk_save_objects([doctor1, doctor2])
     session.commit()
 
-    job1 = IncartJob()
-    job1.id = '1'; job1.snippet = 'job_1'
-    job2 = IncartJob()
-    job2.id = '2'; job2.snippet = 'job_2'
+    job1 = IncartJob(id='1', snippet='job_1')
+    job2 = IncartJob(id='2', snippet='job_2')
     session.bulk_save_objects([job1, job2])
     session.commit()
 

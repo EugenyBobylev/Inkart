@@ -61,24 +61,6 @@ class IncartJob(Base, DataDict):
 
     jobdoctors = relationship("JobDoctor")
 
-    def __init__(self):
-        self.id = ''
-        self.snippet = ''
-        self.created = datetime.now().astimezone(timezone.utc)
-        self.doctor_id = None
-        self.request_id = None
-        self.request_started = None
-        self.request_time_estimate = None
-        self.request_answer_id = None
-        self.answered = None
-
-        self.job_start_id = None
-        self.job_started = None
-        self.job_time_estimate = None
-        self.job_finish_id = None
-        self.job_finished = None
-        self.closed = None
-
     def __repr__(self):
         return f'id={self.id}; snippet="{self.snippet}"; created={self.created}; candidate_id={self.candidate_id}; ' \
                f'request_id={self.request_id}; request_started={self.request_started}; ' \
@@ -93,7 +75,6 @@ class JobDoctor(Base):
 
     job_id = Column("job_id", String(16), ForeignKey('incartjobs.id'), primary_key=True)
     doctor_id = Column("id", Integer, ForeignKey('doctors.id'), primary_key=True, autoincrement=False)
-    candidate_id = Column("candidate_id", Integer)  # id кандидата
     request_id = Column("request_id", Integer)      # id whatsapp message запроса доктору на расшифровку
     request_started = Column("request_started", DateTime)  # метка времени UTC отправки запроса доктору на расшифровку
     request_time_estimate = Column("request_time_estimate", DateTime)  # метка времени UTC ожидания получения подтверждения от доктора
@@ -104,9 +85,18 @@ class JobDoctor(Base):
     job_started = Column("job_started", DateTime)  # время отправки
     job_time_estimate = Column("job_time_estimate", Integer) # Ожидаемое время окончания расшифровки
     job_finish_id = Column("job_finish_id", Integer)  # id whatsapp message с подтверждением окончания расшифровки
+    job_finished = Column("job_finished", DateTime)  # время получения сообщения об окончании расшифровки
 
     doctor: Doctor = relationship("Doctor", back_populates='jobdoctors')
     job: IncartJob = relationship("IncartJob", back_populates='jobdoctors')
+
+    def __repr__(self):
+        return f'job_id={self.job_id}; doctor_id="{self.doctor_id}"; request_id={self.request_id}; ' \
+               f'request_started={self.request_started}; request_time_estimate={self.request_time_estimate}; ' \
+               f'request_answer_id={self.request_answer_id}; answered={self.answered}; job_start_id={self.job_start_id}; ' \
+               f' job_started={self.job_started}; job_time_estimate={self.job_time_estimate}; ' \
+               f'job_finish_id={self.job_finish_id}; job_finished={self.job_finished}'
+
 
 # chat2desk whatsapp messah=ge
 @dataclass
