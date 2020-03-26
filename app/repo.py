@@ -86,6 +86,13 @@ class Repo(object):
         ok: bool = self.commit()
         return ok
 
+    def clear_jobdoctors(self) -> bool:
+        query = self.session.query(JobDoctor)
+        query.delete();
+        ok: bool = self.commit()
+        return ok
+
+
     def clear_incartjobs(self) -> bool:
         query = self.session.query(IncartJob)
         query.delete()

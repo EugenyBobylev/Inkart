@@ -96,20 +96,19 @@ def update_jobdoctor(jobdoctor: JobDoctor) -> bool:
 
 # Запустить задачу на выполнение
 def run_job(job: IncartJob) -> None:
+    jobdoctor: JobDoctor = None
     if job.doctor_id is None:
-        find_doctor(job)
+        jobdoctor = find_doctor(job)
     update_job(job)
     if job.doctor_id is not None:
-        send_job(job)
-    print(job)
-    update_job(job)
-    if job.job_finish_id is None:
-        send_rejection(job)  # послать отказ
-    if job.job_finished is not None:
-        send_success(job)    # послать подтверждение выполнения
+        send_job(jobdoctor)
+    if jobdoctor.job_finish_id is None:
+        send_rejection(jobdoctor)  # послать отказ
+        job.doctor_id = None
+    if jobdoctor.job_finished is not None:
+        send_success(jobdoctor)    # послать подтверждение выполнения
         job.closed = datetime.now().astimezone(timezone.utc)
     update_job(job)
-    print(job)
 
 
 def send_whatsapp_message(msg):
@@ -136,9 +135,7 @@ def find_doctor(job: IncartJob) -> JobDoctor:
     jobdoctor = JobDoctor()
     jobdoctor.doctor = candidate
     jobdoctor.job = job
-    with dal.session_scope() as session:
-        session.add(jobdoctor)
-        session.commit()
+    ok: bool = update_jobdoctor(jobdoctor)
 
     # send a request for processing the result
     msg = "Компания \"Инкарт\" предлагает Вам заказ на обработку результата исследования.\n" \
@@ -151,15 +148,8 @@ def find_doctor(job: IncartJob) -> JobDoctor:
     log_info(f"data={data}")
     jobdoctor.request_id = data['message_id']
     jobdoctor.request_started = datetime.now().astimezone(timezone.utc)
-    jobdoctor.request_time_estimate = job.request_started + timedelta(minutes=request_time_estimate)
-    with dal.session_scope() as session:
-        session.add(jobdoctor)
-        session.commit()
-    # job.request_id = data['message_id']
-    # job.request_started = datetime.now().astimezone(timezone.utc)
-    # job.request_time_estimate = job.request_started + timedelta(minutes=request_time_estimate)
-    # update_job(job)
-    # ждем подтверждения запроса
+    jobdoctor.request_time_estimate = jobdoctor.request_started + timedelta(minutes=request_time_estimate)
+    ok = update_jobdoctor(jobdoctor)
     confirm_request(jobdoctor)
     if jobdoctor.answered is not None:
         job.doctor_id = candidate.id
@@ -172,7 +162,7 @@ def confirm_request(jobdoctor: JobDoctor) -> None:
 
     while now < jobdoctor.request_time_estimate:
         log_info("run: confirm_request while")
-        val = get_api_messages(jobdoctor.candidate_id, jobdoctor.request_started)
+        val = get_api_messages(jobdoctor.doctor_id, jobdoctor.request_started)
         status = val['status']
         if status != 'success':
             continue
@@ -189,52 +179,52 @@ def confirm_request(jobdoctor: JobDoctor) -> None:
     update_jobdoctor(jobdoctor)
 
 
-def send_job(job: IncartJob) -> None:
+def send_job(jobdoctor: JobDoctor) -> None:
     log_info("run: send_job")
     msg = "Скачайте задание <тут адрес>\n" \
           "Ждем результат через 2 ч."
-    result = post_api_message(job.doctor_id, msg)
+    result = post_api_message(jobdoctor.doctor_id, msg)
     status = result["status"]
     if status != 'success':
         return
     data = result["data"]
-    job.job_start_id = data['message_id']
-    job.job_started = datetime.now().astimezone(timezone.utc)
-    job.job_time_estimate = job.job_started + timedelta(minutes=job_time_estimate)
-    update_job(job)
+    jobdoctor.job_start_id = data['message_id']
+    jobdoctor.job_started = datetime.now().astimezone(timezone.utc)
+    jobdoctor.job_time_estimate = jobdoctor.job_started + timedelta(minutes=job_time_estimate)
+    update_jobdoctor(jobdoctor)
     # ждем результат
-    wait_processing(job)
+    wait_processing(jobdoctor)
 
 
-def wait_processing(job: IncartJob) -> None:
+def wait_processing(jobdoctor: JobDoctor) -> None:
     log_info("run: wait_processing")
     now = datetime.now().astimezone(timezone.utc)
-    while now < job.job_time_estimate:
-        val = get_api_messages(job.doctor_id, job.job_started)
+    while now < jobdoctor.job_time_estimate:
+        val = get_api_messages(jobdoctor.doctor_id, jobdoctor.job_started)
         status = val['status']
         if status != 'success':
             continue
         data: List[Dict] = val["data"]
         last_msg = ChatMessage.from_json(data[-1])
         msg_date: datetime = parser.parse(last_msg.created)
-        if job.job_started < msg_date < job.job_time_estimate:
-            job.job_finish_id = last_msg.id
-            job.job_finished = parser.parse(last_msg.created)  # Это строка
+        if jobdoctor.job_started < msg_date < jobdoctor.job_time_estimate:
+            jobdoctor.job_finish_id = last_msg.id
+            jobdoctor.job_finished = parser.parse(last_msg.created)  # Это строка
+            ok: bool = update_jobdoctor(jobdoctor)
             break
         time.sleep(wait_job_processing)
 
 
-def send_rejection(job: IncartJob) -> None:
+def send_rejection(jobdoctor: JobDoctor) -> None:
     log_info("run: send_rejection")
     msg = "К сожалению мы вынуждены отменить выполнение Вами заказа."
-    result = post_api_message(job.doctor_id, msg)
+    result = post_api_message(jobdoctor.doctor_id, msg)
 
 
-def send_success(job: IncartJob) -> object:
+def send_success(jobdoctor: JobDoctor) -> None:
     log_info("run: send_success")
     msg = "Подтверждаем выполнение заказа"
-    result = post_api_message(job.doctor_id, msg)
-    return object
+    result = post_api_message(jobdoctor.doctor_id, msg)
 
 
 def create_logger(name: str = 'test logger'):
@@ -261,16 +251,18 @@ def log_info(msg: str):
 def setup_data() -> None:
     # удалить данные о задании
     repo = Repo(dal.session)
+    repo.clear_jobdoctors()
     repo.clear_incartjobs()
     # mark e-mail message as unreaded
     srv = get_service()
     labels = {"removeLabelIds": [], "addLabelIds": ['UNREAD']}
     modify_message(srv, "me", '170c3a9ba451cd9e', labels)
 
+
 if __name__ == "__main__":
-    setup_data()
     logger = create_logger()
     dal.connect()
+    setup_data()
     init()
     # Проверка цикла работы задания
     # myjob = IncartJob()
