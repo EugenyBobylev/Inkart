@@ -204,6 +204,19 @@ class RepoTests(unittest.TestCase):
         self.assertTrue(jobdoctor.job_id, jobdoctor2.job_id)
         self.assertNotEqual(jobdoctor, jobdoctor2)
 
+    def test_deleta_all_incartjobs(self):
+        repo = Repo(dal.session)
+        cnt_before_jobs: int = dal.session.query(IncartJob).count()
+        ok: bool = repo.clear_incartjobs()
+        cnt_after_jobs: int =  dal.session.query(IncartJob).count()
+        cnt_after_jobdoctors: int = dal.session.query(JobDoctor).count()
+
+        self.assertTrue(ok)
+        self.assertEqual(cnt_before_jobs, 2)
+        self.assertEqual(cnt_after_jobs, 0)
+        self.assertTrue(cnt_after_jobdoctors,0)
+
+
 
 # подготовка тестовой БД
 def prep_db(session: orm.session.Session):

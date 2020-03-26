@@ -55,8 +55,8 @@ def check_new_email():
             repo = Repo(session)
             for message in new_messages:
                 job = IncartJob.from_json(message)
-                result = repo.add_incartjob(job)
-                if result['ok']:
+                ok: bool = repo.add_incartjob(job)
+                if ok:
                     logger.info(f"job added to db {job}")
                     job_queue.put(job)
                     # mark e-mail message as readed
@@ -257,7 +257,13 @@ def log_info(msg: str):
         logger.info(msg)
 
 
+# подготовить исходные данные
+def setup_data() -> None:
+    repo = Repo(dal.session)
+    repo.clear_incartjobs()
+
 if __name__ == "__main__":
+    setup_data()
     logger = create_logger()
     dal.connect()
     init()

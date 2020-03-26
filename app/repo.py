@@ -66,12 +66,10 @@ class Repo(object):
         job: IncartJob = self.session.query(IncartJob).filter(IncartJob.id == id).first()
         return job
 
-    def add_incartjob(self, job: IncartJob) -> dict:
+    def add_incartjob(self, job: IncartJob) -> bool:
         self.session.add(job)
         ok: bool = self.commit()
-        if not ok:
-            return {"ok": ok, "job": None}
-        return {"ok": ok, "job": job}
+        return ok
 
     def update_incartjob(self, job: IncartJob) -> bool:
         self.session.add(job)
@@ -85,6 +83,12 @@ class Repo(object):
 
     def update_jobdoctor(self, jobdoctor: JobDoctor) -> bool:
         self.session.add(jobdoctor)
+        ok: bool = self.commit()
+        return ok
+
+    def clear_incartjobs(self) -> bool:
+        query = self.session.query(IncartJob)
+        query.delete()
         ok: bool = self.commit()
         return ok
 
