@@ -259,8 +259,13 @@ def log_info(msg: str):
 
 # подготовить исходные данные
 def setup_data() -> None:
+    # удалить данные о задании
     repo = Repo(dal.session)
     repo.clear_incartjobs()
+    # mark e-mail message as unreaded
+    srv = get_service()
+    labels = {"removeLabelIds": [], "addLabelIds": ['UNREAD']}
+    modify_message(srv, "me", '170c3a9ba451cd9e', labels)
 
 if __name__ == "__main__":
     setup_data()
