@@ -218,13 +218,13 @@ def wait_processing(jobdoctor: JobDoctor) -> None:
 def send_rejection(jobdoctor: JobDoctor) -> None:
     log_info("run: send_rejection")
     msg = "К сожалению мы вынуждены отменить выполнение Вами заказа."
-    result = post_api_message(jobdoctor.doctor_id, msg)
+    post_api_message(jobdoctor.doctor_id, msg)
 
 
 def send_success(jobdoctor: JobDoctor) -> None:
     log_info("run: send_success")
     msg = "Подтверждаем выполнение заказа"
-    result = post_api_message(jobdoctor.doctor_id, msg)
+    post_api_message(jobdoctor.doctor_id, msg)
 
 
 def create_logger(name: str = 'test logger'):
