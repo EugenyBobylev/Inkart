@@ -16,14 +16,18 @@ from config import Config
 
 
 class TestsApp(unittest.TestCase):
-    def setUp(self) -> None:
-        self.job = IncartJob()
-        self.job.id = '170c3a9ba451cd9e'
-        self.job.snippet = 'Задание на обработку № 123'
+    @classmethod
+    def setUpClass(cls) -> None:
+        dal.conn_string = 'sqlite:///:memory:'
+        dal.connect()
+        dal.session = dal.Session()
+        prep_db(dal.session)
 
-    def test_inсart_job(self):
-        self.assertEqual('170c3a9ba451cd9e', self.job.id)
-        self.assertEqual('Задание на обработку № 123', self.job.snippet)
+    def setUp(self) -> None:
+        dal.session = dal.Session()
+
+    def tearDown(self) -> None:
+        dal.session.close()
 
     @patch('app.WhatsappNotification.get_api_messages')
     def test_confirm_request(self, mock_get_api_message):
@@ -73,6 +77,7 @@ class TestsApp(unittest.TestCase):
         doctor: Doctor = get_candidate()
         self.assertIsNotNone(doctor)
         self.assertTrue(isinstance(doctor, Doctor))
+
 
 class RepoTests(unittest.TestCase):
     @classmethod
@@ -204,7 +209,8 @@ class RepoTests(unittest.TestCase):
 def prep_db(session: orm.session.Session):
     doctor1 = Doctor(id=1, name='Айболит')
     doctor2 = Doctor(id=2, name='Сеченов')
-    session.bulk_save_objects([doctor1, doctor2])
+    doctor3 = Doctor(id=96881373, name='EugenyBobylev')
+    session.bulk_save_objects([doctor1, doctor2, doctor3])
     session.commit()
 
     job1 = IncartJob(id='1', snippet='job_1')

@@ -62,12 +62,8 @@ class IncartJob(Base, DataDict):
     jobdoctors = relationship("JobDoctor")
 
     def __repr__(self):
-        return f'id={self.id}; snippet="{self.snippet}"; created={self.created}; candidate_id={self.candidate_id}; ' \
-               f'request_id={self.request_id}; request_started={self.request_started}; ' \
-               f'request_time_estimate={self.request_time_estimate}; request_answer_id={self.request_answer_id}; ' \
-               f'answered={self.answered}; doctor_id={self.doctor_id}; job_start_id={self.job_start_id}' \
-               f'job_started={self.job_started}; job_time_estimate={self.job_time_estimate}; ' \
-               f'job_finish_id={self.job_finish_id}; job_finished={self.job_finished}; closed={self.closed}'
+        return f'id={self.id}; snippet="{self.snippet}"; created={self.created}; doctor_id={self.doctor_id}; ' \
+               f'closed={self.closed}'
 
 
 class JobDoctor(Base):
