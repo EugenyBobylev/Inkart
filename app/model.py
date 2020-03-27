@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import List
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
@@ -41,6 +41,7 @@ class Doctor(Base):
     extra_comment_1 = Column("extra_comment_1", String(512))
     extra_comment_2 = Column("extra_comment_2", String(512))
     extra_comment_3 = Column("extra_comment_3", String(512))
+    is_active = Column("is_active", Boolean, nullable=False, default=True)
 
     jobdoctors = relationship("JobDoctor")
 
