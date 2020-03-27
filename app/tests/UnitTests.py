@@ -199,6 +199,7 @@ class RepoTests(unittest.TestCase):
         self.assertTrue(jobdoctor.job_id, jobdoctor2.job_id)
         self.assertNotEqual(jobdoctor, jobdoctor2)
 
+    # выбор кандидата для задания у которого есть jobdoctor
     def test_get_job_candidate(self):
         repo = Repo(dal.session)
         job = repo.get_incartjob('1')
@@ -207,6 +208,16 @@ class RepoTests(unittest.TestCase):
         self.assertIsNotNone(candidate)
         self.assertTrue(isinstance(candidate, Doctor))
         self.assertEqual(candidate.id, 96881373)
+
+    # выбор кандидата, для задания у которого еще нет jobdoctor
+    def test_get_job_candidate_first(self):
+        repo= Repo(dal.session)
+        job = repo.get_incartjob('2')
+        candidate: Doctor = repo.get_job_candidate(job)
+
+        self.assertIsNotNone(candidate)
+        self.assertTrue(isinstance(candidate, Doctor))
+        self.assertEqual(candidate.id, 1)
 
 
 # подготовка тестовой БД
