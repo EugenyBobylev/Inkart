@@ -73,11 +73,6 @@ class TestsApp(unittest.TestCase):
         self.assertEqual(config["DEFAULT"].getint("wait_job_processing"), 30)
         self.assertEqual(config["DEFAULT"].getfloat("job_time_estimate"), 120.0)
 
-    def test_get_cadidate(self):
-        doctor: Doctor = get_candidate()
-        self.assertIsNotNone(doctor)
-        self.assertTrue(isinstance(doctor, Doctor))
-
 
 class RepoTests(unittest.TestCase):
     @classmethod
@@ -103,7 +98,7 @@ class RepoTests(unittest.TestCase):
     def test_get_all_doctors(self):
         repo = Repo(dal.session)
         doctors = repo.get_all_doctors()
-        self.assertEqual(len(doctors), 2)
+        self.assertEqual(len(doctors), 3)
         self.assertTrue(doctors[0].id, 1)
         self.assertTrue(doctors[1], 2)
 
@@ -204,18 +199,14 @@ class RepoTests(unittest.TestCase):
         self.assertTrue(jobdoctor.job_id, jobdoctor2.job_id)
         self.assertNotEqual(jobdoctor, jobdoctor2)
 
-    def test_deleta_all_incartjobs(self):
+    def test_get_job_candidate(self):
         repo = Repo(dal.session)
-        cnt_before_jobs: int = dal.session.query(IncartJob).count()
-        ok: bool = repo.clear_incartjobs()
-        cnt_after_jobs: int =  dal.session.query(IncartJob).count()
-        cnt_after_jobdoctors: int = dal.session.query(JobDoctor).count()
+        job = repo.get_incartjob('1')
+        candidate: Doctor = repo.get_job_candidate(job)
 
-        self.assertTrue(ok)
-        self.assertEqual(cnt_before_jobs, 2)
-        self.assertEqual(cnt_after_jobs, 0)
-        self.assertTrue(cnt_after_jobdoctors,0)
-
+        self.assertIsNotNone(candidate)
+        self.assertTrue(isinstance(candidate, Doctor))
+        self.assertEqual(candidate.id, 96881373)
 
 
 # подготовка тестовой БД

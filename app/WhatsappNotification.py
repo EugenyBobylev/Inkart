@@ -84,6 +84,7 @@ def update_job(job: IncartJob) -> bool:
     return ok
 
 
+# записать изменения состояния обработки задачи в БД
 def update_jobdoctor(jobdoctor: JobDoctor) -> bool:
     log_info("run: update_jobdoctor")
     ok: bool = False
@@ -94,45 +95,55 @@ def update_jobdoctor(jobdoctor: JobDoctor) -> bool:
     return ok
 
 
+# послать сообщение по Whatsapp
+def send_whatsapp_message(msg):
+    data = post_api_message(client_id=96881373, message=msg)
+    log_info(data)
+
+
 # Запустить задачу на выполнение
 def run_job(job: IncartJob) -> None:
     jobdoctor: JobDoctor = None
+    # Найти исполнителя задания
     if job.doctor_id is None:
         jobdoctor = find_doctor(job)
     update_job(job)
-    if job.doctor_id is not None:
-        send_job(jobdoctor)
+    if job.doctor_id is None:
+        job_queue.put(job)
+        return
+    # отправить задание на исполнение
+    send_job(jobdoctor)
     if jobdoctor.job_finish_id is None:
         send_rejection(jobdoctor)  # послать отказ
         job.doctor_id = None
+        job_queue.put(job)
+        return
+    # провериь выполнение задания
     if jobdoctor.job_finished is not None:
         send_success(jobdoctor)    # послать подтверждение выполнения
         job.closed = datetime.now().astimezone(timezone.utc)
     update_job(job)
 
 
-def send_whatsapp_message(msg):
-    data = post_api_message(client_id=96881373, message=msg)
-    log_info(data)
-
-
-# предложить кандидата для выполнения работы
-def get_candidate() -> int:
+# предложить кандидата для выполнения задания
+def get_candidate(job: IncartJob) -> int:
     log_info("run: get_candidate")
     candidate: Doctor = None
     with dal.session_scope() as session:
         repo = Repo(session)
-        candidate = repo.get_doctor(96881373)  # Бобылев Е.А. 96881373
+        # candidate = repo.get_doctor(96881373)  # Бобылев Е.А. 96881373
+        candidate = repo.get_job_candidate(job)  # Бобылев Е.А. 96881373
     return candidate
 
 
+# Найти исполнителя на выполнение задания
 def find_doctor(job: IncartJob) -> JobDoctor:
     log_info(("run: find_doctor"))
     # get free candidate for processing the result
-    candidate: Doctor = get_candidate()
+    candidate: Doctor = get_candidate(job)
     job.candidate_id = candidate.id
 
-    jobdoctor = JobDoctor()
+    jobdoctor = JobDoctor()  # создать объект для отслеживания состояиня обработки задания
     jobdoctor.doctor = candidate
     jobdoctor.job = job
     ok: bool = update_jobdoctor(jobdoctor)

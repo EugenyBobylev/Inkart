@@ -92,12 +92,17 @@ class Repo(object):
         ok: bool = self.commit()
         return ok
 
-
     def clear_incartjobs(self) -> bool:
         query = self.session.query(IncartJob)
         query.delete()
         ok: bool = self.commit()
         return ok
+
+    def get_job_candidate(self, job: IncartJob) -> Doctor:
+        # найти любого врача, к которым мы не обращались с этим заданием
+        doctors_id: List[int] = [x.doctor.id for x in job.jobdoctors]
+        candidate: Doctor = self.session.query(Doctor).filter(Doctor.id.notin_(doctors_id)).first()
+        return candidate
 
 
 def to_utc_datetime(datetimestr) -> datetime:
