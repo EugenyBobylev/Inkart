@@ -211,7 +211,7 @@ class RepoTests(unittest.TestCase):
 
     # выбор кандидата, для задания у которого еще нет jobdoctor
     def test_get_job_candidate_first(self):
-        repo= Repo(dal.session)
+        repo = Repo(dal.session)
         job = repo.get_incartjob('2')
         candidate: Doctor = repo.get_job_candidate(job)
 

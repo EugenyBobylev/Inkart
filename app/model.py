@@ -79,7 +79,7 @@ class IncartJob(Base, DataDict):
     link_view = Column("link_view", String(128))  # ссылка позволяющая открыть визуализатор заключения
     link_pdf = Column("link_pdf", String(128))  # ссылка на скачивание PDF
 
-    jobdoctors = relationship("JobDoctor")
+    jobdoctors = relationship("JobDoctor", lazy='select')
 
     def __repr__(self):
         return f'id={self.id}; snippet="{self.snippet}"; created={self.created}; doctor_id={self.doctor_id}; ' \

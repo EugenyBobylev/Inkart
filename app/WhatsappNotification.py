@@ -7,6 +7,7 @@ import threading
 from typing import List, Dict
 
 from dateutil import parser
+from sqlalchemy.orm import lazyload
 from timeloop import Timeloop
 from datetime import timedelta, timezone, datetime
 
@@ -101,8 +102,18 @@ def send_whatsapp_message(msg):
     log_info(data)
 
 
+# присоединить задание к текущей сессии
+def job_merge(job_detached: IncartJob) -> IncartJob:
+    job: IncartJob = None
+    with dal.session_scope() as session:
+        job = session.merge(job_detached)
+        cnt = len(job.jobdoctors)
+    return job
+
+
 # Запустить задачу на выполнение
-def run_job(job: IncartJob) -> None:
+def run_job(job_detached: IncartJob) -> None:
+    job: IncartJob = job_merge(job_detached)
     jobdoctor: JobDoctor = None
     # Найти исполнителя задания
     if job.doctor_id is None:

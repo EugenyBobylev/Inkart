@@ -101,7 +101,8 @@ class Repo(object):
     def get_job_candidate(self, job: IncartJob) -> Doctor:
         # найти любого врача, к которым мы не обращались с этим заданием
         doctors_id: List[int] = [x.doctor.id for x in job.jobdoctors]
-        candidate: Doctor = self.session.query(Doctor).filter(Doctor.id.notin_(doctors_id)).first()
+        candidate: Doctor = self.session.query(Doctor).\
+            filter(Doctor.id.notin_(doctors_id)).filter(Doctor.is_active).first()
         return candidate
 
 
