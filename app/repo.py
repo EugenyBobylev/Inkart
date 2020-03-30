@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import sqlalchemy
 from dateutil.tz import tz
@@ -104,6 +104,15 @@ class Repo(object):
         candidate: Doctor = self.session.query(Doctor).\
             filter(Doctor.id.notin_(doctors_id)).filter(Doctor.is_active).first()
         return candidate
+
+
+    def get_jobs(self) -> List[IncartJob]:
+        jobs = self.session.query(IncartJob).filter(IncartJob.closed is None).all()
+        for job in jobs:
+            if job.doctor_id is not None:
+                jobdoctor = job.jobdoctors[-1]
+                time_now = datetime.now().astimezone(timezone.utc)
+
 
 
 def to_utc_datetime(datetimestr) -> datetime:

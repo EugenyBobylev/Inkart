@@ -7,7 +7,6 @@ import threading
 from typing import List, Dict
 
 from dateutil import parser
-from sqlalchemy.orm import lazyload
 from timeloop import Timeloop
 from datetime import timedelta, timezone, datetime
 
@@ -110,6 +109,9 @@ def job_merge(job_detached: IncartJob) -> IncartJob:
         cnt = len(job.jobdoctors)
     return job
 
+def load_from_db():
+    repo = Repo(dal.session)
+    jobs = repo.get_jobs()
 
 # Запустить задачу на выполнение
 def run_job(job_detached: IncartJob) -> None:
@@ -121,6 +123,7 @@ def run_job(job_detached: IncartJob) -> None:
     update_job(job)
     if job.doctor_id is None:
         job_queue.put(job)
+        send_rejection()
         return
     # отправить задание на исполнение
     send_job(jobdoctor)
@@ -201,6 +204,7 @@ def confirm_request(jobdoctor: JobDoctor) -> None:
     update_jobdoctor(jobdoctor)
 
 
+# отправить задание на обработку
 def send_job(jobdoctor: JobDoctor) -> None:
     log_info("run: send_job")
     msg = "Скачайте задание <тут адрес>\n" \
@@ -218,6 +222,7 @@ def send_job(jobdoctor: JobDoctor) -> None:
     wait_processing(jobdoctor)
 
 
+# выполнения провеоки окончания обработки задания доктором (Ожидание завершения обработки доктором)
 def wait_processing(jobdoctor: JobDoctor) -> None:
     log_info("run: wait_processing")
     now = datetime.now().astimezone(timezone.utc)
