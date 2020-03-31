@@ -1,10 +1,12 @@
 import configparser
 import os
-import parser
-import threading, time
+import threading
+import time
 from datetime import timedelta, datetime, timezone
 from logging import Logger
 from typing import List, Dict
+
+from dateutil import parser
 
 from app.WhatsappChanel import post_api_message, get_api_messages
 from app.WhatsappNotification import jobid_queue
@@ -50,7 +52,7 @@ class Task(threading.Thread):
         self.update_job(job)
         if job.doctor_id is None:
             jobid_queue.put(job)
-            self.send_rejection()
+            self.send_rejection(jobdoctor)
             return
         # отправить задание на исполнение
         self.send_job(jobdoctor)
@@ -160,17 +162,25 @@ class Task(threading.Thread):
             if jobdoctor.job_started < msg_date < jobdoctor.job_time_estimate:
                 jobdoctor.job_finish_id = last_msg.id
                 jobdoctor.job_finished = parser.parse(last_msg.created)  # Это строка
-                ok: bool = self.update_jobdoctor(jobdoctor)
+                self.update_jobdoctor(jobdoctor)
                 break
             time.sleep(Task.wait_job_processing)
 
     # записать изменения состояния задачи в БД
     def update_job(self, job: IncartJob) -> bool:
         self.log_info("run: update_job")
-        ok: bool = False
         repo = Repo(self.dal.session)
         ok: bool = repo.update_incartjob(job)
         self.log_info(f"run: update_job, result={ok}")
+        return ok
+
+    # записать изменения состояния обработки задачи в БД
+    def update_jobdoctor(self, jobdoctor: JobDoctor) -> bool:
+        self.log_info("run: update_jobdoctor")
+        with self.dal.session_scope() as session:
+            repo = Repo(session)
+            ok = repo.update_jobdoctor(jobdoctor)
+        self.log_info(f"run: update_jobdoctor, result={ok}")
         return ok
 
     # записать в лог
