@@ -106,12 +106,29 @@ class Repo(object):
         return candidate
 
 
-    def get_jobs(self) -> List[IncartJob]:
-        jobs = self.session.query(IncartJob).filter(IncartJob.closed is None).all()
+    # get all unclosing jobs
+    def get_unclosing_jobs(self) -> List[IncartJob]:
+        jobs = self.session.query(IncartJob).filter(IncartJob.closed.is_(None)).all()
         for job in jobs:
             if job.doctor_id is not None:
                 jobdoctor = job.jobdoctors[-1]
-                time_now = datetime.now().astimezone(timezone.utc)
+                # если есть отметка о выполнении доктором задания (нужно прворить результат работы)
+                if jobdoctor.job_finish_id is not None and jobdoctor.job_finished is not None:
+                    continue
+                # если доктор дал согласие на выполнение задания
+                if jobdoctor.request_answer_id is not None:
+                    # если задание на выполнение не было отправлено
+                    if jobdoctor.job_start_id is None:
+                        job.doctor_id = None  # сброс доктора заново запускает процедуру обработки задания
+                        continue
+                    # задание на выполнение было отправлено
+                    time_now = datetime.now().astimezone(timezone.utc)
+                    # если ожидаемое время завершения обработки не наступило
+                    if jobdoctor.job_started < time_now < jobdoctor.job_time_estimate:
+                        continue
+                job.doctor_id = None
+        self.session.commit()
+        return jobs
 
 
 

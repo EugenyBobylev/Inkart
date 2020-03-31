@@ -36,11 +36,12 @@ class TestsApp(unittest.TestCase):
         self.job.request_time_estimate = self.job.request_started + timedelta(hours=1)
         t = self.job.request_started + timedelta(minutes=10)
         mock_get_api_message.return_value = {'data':
-        [{'id': 360613728, 'text': 'Да', 'created': '2020-03-10T05:14:32 UTC'},
-         {'id': 360837004, 'text': 'Да', 'created': t.strftime("%Y-%m-%dT%H:%M:%S %Z")}
-        ], 'meta': {'total': 2, 'limit': 20, 'offset': 0},
-           'status': 'success'
-        }
+                                                 [{'id': 360613728, 'text': 'Да', 'created': '2020-03-10T05:14:32 UTC'},
+                                                  {'id': 360837004, 'text': 'Да',
+                                                   'created': t.strftime("%Y-%m-%dT%H:%M:%S %Z")}
+                                                  ], 'meta': {'total': 2, 'limit': 20, 'offset': 0},
+                                             'status': 'success'
+                                             }
         confirm_request(job=self.job)
         self.assertEqual(self.job.request_answer_id, 360837004)
         self.assertTrue(self.job.answered is not None)
@@ -218,6 +219,17 @@ class RepoTests(unittest.TestCase):
         self.assertIsNotNone(candidate)
         self.assertTrue(isinstance(candidate, Doctor))
         self.assertEqual(candidate.id, 1)
+
+    def test_get_all_unclosing_jobs(self):
+        all_jobs = dal.session.query(IncartJob).all()
+        jobs = dal.session.query(IncartJob).filter(IncartJob.closed.is_(None)).all()
+        self.assertEqual(len(jobs), len(all_jobs))
+
+    def test_repo_get_unclosing_jobs(self):
+        repo = Repo(dal.session)
+        jobs: List[IncartJob] = repo.get_unclosing_jobs()
+        all_jobs = dal.session.query(IncartJob).all()
+        self.assertTrue(len(jobs), len(all_jobs))
 
 
 # подготовка тестовой БД
