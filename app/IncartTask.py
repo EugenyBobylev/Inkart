@@ -4,12 +4,12 @@ import threading
 import time
 from datetime import timedelta, datetime, timezone
 from logging import Logger
+from queue import Queue
 from typing import List, Dict
 
 from dateutil import parser
 
 from app.WhatsappChanel import post_api_message, get_api_messages
-from app.WhatsappNotification import jobid_queue
 from app.model import DataAccessLayer, IncartJob, JobDoctor, Doctor, ChatMessage
 from app.repo import Repo
 from config import Config
@@ -21,13 +21,14 @@ class Task(threading.Thread):
     wait_job_processing = 30  # интервал в сек. проверки окончания обработки доктором задания
     job_time_estimate = 120.0  # время ожидания в мин. окончания обработки задания доктором
 
-    def __init__(self, job_id: str, logger: Logger):
+    def __init__(self, job_id: str, queue: Queue, logger: Logger):
         threading.Thread.__init__(self)
         self.daemon = False
         self.stopped = threading.Event()
         self.dal = DataAccessLayer()
         self.dal.connect()
         self.job_id: str = job_id
+        self.queue = queue
         self.logger: Logger = logger
 
     def stop(self):
@@ -51,7 +52,7 @@ class Task(threading.Thread):
             jobdoctor = self.find_doctor(job)
         self.update_job(job)
         if job.doctor_id is None:
-            jobid_queue.put(job)
+            self.queue.put(job.id)
             self.send_rejection(jobdoctor)
             return
         # отправить задание на исполнение
@@ -59,7 +60,7 @@ class Task(threading.Thread):
         if jobdoctor.job_finish_id is None:
             self.send_rejection(jobdoctor)  # послать отказ
             job.doctor_id = None
-            jobid_queue.put(job)
+            self.queue.put(job.id)
             return
         # провериь выполнение задания
         if jobdoctor.job_finished is not None:
@@ -72,7 +73,6 @@ class Task(threading.Thread):
         self.log_info("run: find_doctor")
         # get free candidate for processing the result
         candidate: Doctor = self.get_candidate(job)
-        job.candidate_id = candidate.id
 
         jobdoctor = JobDoctor()  # создать объект для отслеживания состояиня обработки задания
         jobdoctor.doctor = candidate
@@ -82,7 +82,7 @@ class Task(threading.Thread):
         # send a request for processing the result
         msg = "Компания \"Инкарт\" предлагает Вам заказ на обработку результата исследования.\n" \
               "Если Вы готовы выполнить заказ, пришлите ответ со словом: Да."
-        result = post_api_message(job.candidate_id, msg)
+        result = post_api_message(candidate.id, msg)
         status = result["status"]
         if status != 'success':
             return jobdoctor
@@ -100,11 +100,8 @@ class Task(threading.Thread):
     # предложить кандидата для выполнения задания
     def get_candidate(self, job: IncartJob) -> int:
         self.log_info("run: get_candidate")
-        candidate: Doctor = None
-        with self.dal.session_scope() as session:
-            repo = Repo(session)
-            # candidate = repo.get_doctor(96881373)  # Бобылев Е.А. 96881373
-            candidate = repo.get_job_candidate(job)  # Бобылев Е.А. 96881373
+        repo = Repo(self.dal.session)
+        candidate: Doctor = repo.get_job_candidate(job)  # Бобылев Е.А. 96881373
         return candidate
 
     # ожидать подтвеждение от кандидата согласия на выполнения задания
@@ -177,9 +174,8 @@ class Task(threading.Thread):
     # записать изменения состояния обработки задачи в БД
     def update_jobdoctor(self, jobdoctor: JobDoctor) -> bool:
         self.log_info("run: update_jobdoctor")
-        with self.dal.session_scope() as session:
-            repo = Repo(session)
-            ok = repo.update_jobdoctor(jobdoctor)
+        repo = Repo(self.dal.session)
+        ok: bool = repo.update_jobdoctor(jobdoctor)
         self.log_info(f"run: update_jobdoctor, result={ok}")
         return ok
 

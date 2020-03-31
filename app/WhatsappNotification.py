@@ -61,7 +61,7 @@ def check_job_queue():
     if not jobid_queue.empty():
         log_info("run: check_job_queue")
         job_id: str = jobid_queue.get()
-        task = Task(job_id=job_id, logger=logger)
+        task = Task(job_id=job_id, queue=jobid_queue, logger=logger)
         task.start()
 
 
