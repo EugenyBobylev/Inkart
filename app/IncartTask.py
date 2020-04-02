@@ -45,28 +45,37 @@ class Task(threading.Thread):
     def run_job(self) -> None:
         repo = Repo(self.dal.session)
         job: IncartJob = repo.get_incartjob(self.job_id)
-
         jobdoctor: JobDoctor = None
-        # Найти исполнителя задания
+
+        # искать исполнителя задания
         if job.doctor_id is None:
             jobdoctor = self.find_doctor(job)
-        self.update_job(job)
+        # исполнитель не найден
         if job.doctor_id is None:
-            self.queue.put(job.id)
-            self.send_rejection(jobdoctor)
+            self.stop_job(jobdoctor)
             return
         # отправить задание на исполнение
         self.send_job(jobdoctor)
         if jobdoctor.job_finish_id is None:
-            self.send_rejection(jobdoctor)  # послать отказ
-            job.doctor_id = None
-            self.queue.put(job.id)
+            self.stop_job(jobdoctor)
             return
-        # провериь выполнение задания
-        if jobdoctor.job_finished is not None:
-            self.send_success(jobdoctor)  # послать подтверждение выполнения
-            job.closed = datetime.now().astimezone(timezone.utc)
+        # задание не было выполнено в срок
+        if jobdoctor.job_finished is None:
+            self.stop_job(jobdoctor)
+            return
+        # доктор подтвердил выполнение задания
+        job.closed = datetime.now().astimezone(timezone.utc)
         self.update_job(job)
+        self.send_success(jobdoctor)  # послать подтверждение выполнения
+
+    #перекратить обработку задания, отослать кандитату или исполнителю отказ
+    def stop_job(self, jobdoctor: JobDoctor):
+        job: JobDoctor = jobdoctor.job
+        job.doctor_id = None
+        self.update_job(job)
+        self.queue.put(job.id)
+        self.send_rejection(jobdoctor)  # послать отказ
+
 
     # Найти исполнителя на выполнение задания
     def find_doctor(self, job: IncartJob) -> JobDoctor:
@@ -95,6 +104,7 @@ class Task(threading.Thread):
         self.confirm_request(jobdoctor)
         if jobdoctor.answered is not None:
             job.doctor_id = candidate.id
+            self.update_job(job)
         return jobdoctor
 
     # предложить кандидата для выполнения задания
@@ -123,6 +133,7 @@ class Task(threading.Thread):
                     if last_msg.text.upper() == 'ДА':
                         jobdoctor.request_answer_id = last_msg.id
                         jobdoctor.answered = msg_date
+                    self.log_info(F"run conffirm_request msg.text={last_msg.text}")
                     break
             time.sleep(Task.wait_confirm_request)
         self.update_jobdoctor(jobdoctor)
