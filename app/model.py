@@ -57,8 +57,10 @@ class IncartJob(Base, DataDict):
     id = Column("id", String(16), primary_key=True)
     snippet = Column("snippet", String(512))  # текст сообщения
     created = Column("created", DateTime, default=datetime.now().astimezone(timezone.utc))     # когда задание создано UTC
+    restart = Column("restart", DateTime)  # метка времени с которой задача может начать обрабоатываться
     doctor_id = Column("doctor_id", Integer)  # исполнитель
     closed = Column("closed", DateTime)    # метка времени UTC закрытия задания
+
     info_type = Column("info_type", String(64))
     pat_id = Column("pat_id", String(64))  # id пациента
     id_inw = Column("id_inw", Integer)  # id исследования
