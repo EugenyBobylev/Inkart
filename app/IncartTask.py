@@ -76,7 +76,6 @@ class Task(threading.Thread):
         self.queue.put(job.id)
         self.send_rejection(jobdoctor)  # послать отказ
 
-
     # Найти исполнителя на выполнение задания
     def find_doctor(self, job: IncartJob) -> JobDoctor:
         self.log_info("run: find_doctor")
@@ -108,7 +107,7 @@ class Task(threading.Thread):
         return jobdoctor
 
     # предложить кандидата для выполнения задания
-    def get_candidate(self, job: IncartJob) -> int:
+    def get_candidate(self, job: IncartJob) -> Doctor:
         self.log_info("run: get_candidate")
         repo = Repo(self.dal.session)
         candidate: Doctor = repo.get_job_candidate(job)  # Бобылев Е.А. 96881373
@@ -136,6 +135,7 @@ class Task(threading.Thread):
                     self.log_info(F"run conffirm_request msg.text={last_msg.text}")
                     break
             time.sleep(Task.wait_confirm_request)
+            now = datetime.now().astimezone(timezone.utc)
         self.update_jobdoctor(jobdoctor)
 
     # отправить задание на обработку

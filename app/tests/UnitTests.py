@@ -230,7 +230,6 @@ class RepoTests(unittest.TestCase):
         self.assertTrue(len(jobs), len(all_jobs))
 
 
-
 # подготовка тестовой БД
 def prep_db(session: orm.session.Session):
     doctor1 = Doctor(id=1, name='Айболит')

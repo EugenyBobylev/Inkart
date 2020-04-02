@@ -24,7 +24,7 @@ check_job_queue_interval = 5   # интервал в сек. проверки п
 
 
 # Выполнить инициализацию глобальных переменных
-# @tl.job(interval=10)
+@tl.job(interval=timedelta(seconds=10))
 def init():
     ini = os.path.join(Config.BASEPATH, 'incart.ini')
     if os.path.isfile(ini):
@@ -39,12 +39,11 @@ def init():
 
 @tl.job(interval=timedelta(seconds=check_new_email_interval))
 def check_new_email():
+    log_info(f"run: check_new_email, no new email {check_new_email_interval} c")
     srv = get_service()
     new_messages = get_all_unread_emails(srv)
     count = len(new_messages)
-    if count < 1:
-        log_info("run: check_new_email, no new email")
-    else:
+    if count > 0:
         log_info(f"run: check_new_email, has new email(s)")
         with dal.session_scope() as session:
             repo = Repo(session)
@@ -61,8 +60,9 @@ def check_new_email():
 
 @tl.job(interval=timedelta(seconds=check_job_queue_interval))
 def check_job_queue():
+    log_info(f"run: check_job_queue every {check_job_queue_interval} c.")
     if not jobid_queue.empty():
-        log_info("run: check_job_queue")
+        log_info(f"run: check_job_queue jobid_queue is not empty")
         job_id: str = jobid_queue.get()
         task = Task(job_id=job_id, queue=jobid_queue, logger=logger)
         task.start()
@@ -116,14 +116,16 @@ def clear_data_in_db() -> None:
 
 
 if __name__ == "__main__":
+    # обязательная инициализация
     logger = create_logger()
     init()
     dal.connect()
     # подготовить данные
     clear_data_in_db()
-    # set_mail_unread()
+    set_mail_unread()
     # jobid_queue = load_queue_from_db()
     # Проверка цикла работы задания
     # check_new_email()
     # check_job_queue()
+    # запустить полный цикл обработки
     tl.start(block=True)
