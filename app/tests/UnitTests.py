@@ -8,8 +8,8 @@ from datetime import datetime, timezone, timedelta
 
 from sqlalchemy import orm
 
+from app import IncartTask
 from app.WhatsappChanel import get_api_message
-from app.WhatsappNotification import confirm_request, get_candidate
 from app.model import dal, IncartJob, Doctor, DataAccessLayer, JobDoctor
 from app.repo import Repo
 from config import Config
@@ -28,23 +28,6 @@ class TestsApp(unittest.TestCase):
 
     def tearDown(self) -> None:
         dal.session.close()
-
-    @patch('app.WhatsappNotification.get_api_messages')
-    def test_confirm_request(self, mock_get_api_message):
-        self.job.request_id = 22
-        self.job.request_started = datetime.now().astimezone(timezone.utc) - timedelta(minutes=20)
-        self.job.request_time_estimate = self.job.request_started + timedelta(hours=1)
-        t = self.job.request_started + timedelta(minutes=10)
-        mock_get_api_message.return_value = {'data':
-                                                 [{'id': 360613728, 'text': 'Да', 'created': '2020-03-10T05:14:32 UTC'},
-                                                  {'id': 360837004, 'text': 'Да',
-                                                   'created': t.strftime("%Y-%m-%dT%H:%M:%S %Z")}
-                                                  ], 'meta': {'total': 2, 'limit': 20, 'offset': 0},
-                                             'status': 'success'
-                                             }
-        confirm_request(job=self.job)
-        self.assertEqual(self.job.request_answer_id, 360837004)
-        self.assertTrue(self.job.answered is not None)
 
     @patch('app.WhatsappChanel.requests.request')
     def test_get_api_message(self, mock_get):
@@ -74,6 +57,21 @@ class TestsApp(unittest.TestCase):
         self.assertEqual(config["DEFAULT"].getint("wait_job_processing"), 30)
         self.assertEqual(config["DEFAULT"].getfloat("job_time_estimate"), 120.0)
 
+    def test_icart_task_init(self):
+        IncartTask.Task.wait_confirm_request = 1
+        IncartTask.Task.request_time_estimate = 1.0
+        IncartTask.Task.wait_job_processing = 1
+        IncartTask.Task.job_time_estimate = 1.0
+
+        ini = os.path.join(Config.BASEPATH, 'incart.ini')
+        config = configparser.ConfigParser()
+        config.read(ini)
+        IncartTask.Task.init(config)
+
+        self.assertEqual(IncartTask.Task.wait_confirm_request, 30)
+        self.assertEqual(IncartTask.Task.request_time_estimate, 30.0)
+        self.assertEqual(IncartTask.Task.wait_job_processing, 30)
+        self.assertEqual(IncartTask.Task.job_time_estimate, 120.0)
 
 class RepoTests(unittest.TestCase):
     @classmethod
@@ -230,6 +228,7 @@ class RepoTests(unittest.TestCase):
         jobs: List[IncartJob] = repo.get_unclosing_jobs()
         all_jobs = dal.session.query(IncartJob).all()
         self.assertTrue(len(jobs), len(all_jobs))
+
 
 
 # подготовка тестовой БД

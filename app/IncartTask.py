@@ -209,12 +209,8 @@ class Task(threading.Thread):
 
     # Выполнить инициализацию глобальных переменных
     @staticmethod
-    def init():
-        ini = os.path.join(Config.BASEPATH, 'incart.ini')
-        if os.path.isfile(ini):
-            config = configparser.ConfigParser()
-            config.read(ini)
-            Task.wait_confirm_request = config["DEFAULT"].getint("wait_confirm_request")
-            Task.request_time_estimate = config["DEFAULT"].getfloat("request_time_estimate")
-            Task.wait_processing = config["DEFAULT"].getint("wait_processing")
-            Task.job_time_estimate = config["DEFAULT"].getfloat("job_time_estimate")
+    def init(config: configparser.ConfigParser):
+        Task.wait_confirm_request = config["DEFAULT"].getint("wait_confirm_request")
+        Task.request_time_estimate = config["DEFAULT"].getfloat("request_time_estimate")
+        Task.wait_job_processing = config["DEFAULT"].getint("wait_job_processing")
+        Task.job_time_estimate = config["DEFAULT"].getfloat("job_time_estimate")

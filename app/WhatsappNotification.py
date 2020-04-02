@@ -7,6 +7,7 @@ from typing import List
 from timeloop import Timeloop
 from datetime import timedelta
 
+from app import IncartTask
 from app.IncartTask import Task
 from config import Config
 from app.GMailApi import get_service, get_all_unread_emails, modify_message
@@ -23,6 +24,7 @@ check_job_queue_interval = 5   # интервал в сек. проверки п
 
 
 # Выполнить инициализацию глобальных переменных
+# @tl.job(interval=10)
 def init():
     ini = os.path.join(Config.BASEPATH, 'incart.ini')
     if os.path.isfile(ini):
@@ -32,9 +34,10 @@ def init():
         check_new_email_interval = config["DEFAULT"].getint("check_new_email_interval")
         global check_job_queue_interval
         check_job_queue_interval = config["DEFAULT"].getint("check_job_queue_interval")
+        IncartTask.Task.init(config)
 
 
-# @tl.job(interval=timedelta(seconds=check_new_email_interval))
+@tl.job(interval=timedelta(seconds=check_new_email_interval))
 def check_new_email():
     srv = get_service()
     new_messages = get_all_unread_emails(srv)
@@ -118,9 +121,9 @@ if __name__ == "__main__":
     dal.connect()
     # подготовить данные
     clear_data_in_db()
-    set_mail_unread()
+    # set_mail_unread()
     # jobid_queue = load_queue_from_db()
     # Проверка цикла работы задания
-    check_new_email()
+    # check_new_email()
     # check_job_queue()
     tl.start(block=True)
