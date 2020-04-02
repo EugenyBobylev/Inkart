@@ -121,7 +121,7 @@ if __name__ == "__main__":
     init()
     dal.connect()
     # подготовить данные
-    clear_data_in_db()
+    # clear_data_in_db()
     # set_mail_unread()
     jobid_queue = load_queue_from_db()
     # Проверка цикла работы задания

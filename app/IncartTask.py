@@ -51,7 +51,11 @@ class Task(threading.Thread):
         # искать исполнителя задания
         if job.doctor_id is None:
             jobdoctor = self.find_doctor(job)
-        # исполнитель не найден
+        # исполнитель не найден(не нашли кандидата)
+        if jobdoctor is None:
+            self.set_restart_datetime(job)
+            return
+        # исполнитель не найден (кандидат отказалася)
         if job.doctor_id is None:
             self.stop_job(jobdoctor)
             return
@@ -69,7 +73,7 @@ class Task(threading.Thread):
         self.update_job(job)
         self.send_success(jobdoctor)  # послать подтверждение выполнения
 
-    #перекратить обработку задания, отослать кандитату или исполнителю отказ
+    # перекратить обработку задания, отослать кандитату или исполнителю отказ
     def stop_job(self, jobdoctor: JobDoctor):
         job: JobDoctor = jobdoctor.job
         job.doctor_id = None
@@ -77,13 +81,18 @@ class Task(threading.Thread):
         self.queue.put(job.id)
         self.send_rejection(jobdoctor)  # послать отказ
 
+    # расчитать и записать в задание время следующего рестарта
+    def set_restart_datetime(self, job):
+        job.restart = datetime.now().astimezone(timezone.utc) + timedelta(minutes=Task.job_delay)
+        self.update_job(job)
+
     # Найти исполнителя на выполнение задания
     def find_doctor(self, job: IncartJob) -> JobDoctor:
         self.log_info("run: find_doctor")
         # get free candidate for processing the result
         candidate: Doctor = self.get_candidate(job)
         if candidate is None:
-            job.restart
+            return None  # прекращаем дальнейщий поиск если нет кандидата
 
         jobdoctor = JobDoctor()  # создать объект для отслеживания состояиня обработки задания
         jobdoctor.doctor = candidate
