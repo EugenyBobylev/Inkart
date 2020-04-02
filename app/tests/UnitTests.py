@@ -50,28 +50,32 @@ class TestsApp(unittest.TestCase):
         config = configparser.ConfigParser()
         config.read(ini)
 
-        self.assertEqual(config["DEFAULT"].getint("check_new_email_interval"), 15)
-        self.assertEqual(config["DEFAULT"].getint("check_job_queue_interval"), 5)
-        self.assertEqual(config["DEFAULT"].getint("wait_confirm_request"), 30)
-        self.assertEqual(config["DEFAULT"].getfloat("request_time_estimate"), 30.0)
-        self.assertEqual(config["DEFAULT"].getint("wait_job_processing"), 30)
-        self.assertEqual(config["DEFAULT"].getfloat("job_time_estimate"), 120.0)
+        self.assertTrue(config["DEFAULT"].getint("check_new_email_interval") > 0)
+        self.assertTrue(config["DEFAULT"].getint("check_job_queue_interval") > 0)
+        self.assertTrue(config["DEFAULT"].getint("wait_confirm_request") > 0)
+        self.assertTrue(config["DEFAULT"].getfloat("request_time_estimate") > 0.0)
+        self.assertTrue(config["DEFAULT"].getint("wait_job_processing") > 0)
+        self.assertTrue(config["DEFAULT"].getfloat("job_time_estimate") > 0.0)
+        self.assertTrue(config["DEFAULT"].getfloat("job_delay") > 0.0)
 
     def test_icart_task_init(self):
-        IncartTask.Task.wait_confirm_request = 1
-        IncartTask.Task.request_time_estimate = 1.0
-        IncartTask.Task.wait_job_processing = 1
-        IncartTask.Task.job_time_estimate = 1.0
+        IncartTask.Task.wait_confirm_request = 0
+        IncartTask.Task.request_time_estimate = 0.0
+        IncartTask.Task.wait_job_processing = 0
+        IncartTask.Task.job_time_estimate = 0.0
+        IncartTask.Task.job_delay = 0.0
 
         ini = os.path.join(Config.BASEPATH, 'incart.ini')
         config = configparser.ConfigParser()
         config.read(ini)
         IncartTask.Task.init(config)
 
-        self.assertEqual(IncartTask.Task.wait_confirm_request, 30)
-        self.assertEqual(IncartTask.Task.request_time_estimate, 30.0)
-        self.assertEqual(IncartTask.Task.wait_job_processing, 30)
-        self.assertEqual(IncartTask.Task.job_time_estimate, 120.0)
+        self.assertTrue(IncartTask.Task.wait_confirm_request > 0)
+        self.assertTrue(IncartTask.Task.request_time_estimate > 0.0)
+        self.assertTrue(IncartTask.Task.wait_job_processing > 0)
+        self.assertTrue(IncartTask.Task.job_time_estimate > 0.0)
+        self.assertTrue(IncartTask.Task.job_delay > 0.0)
+
 
 class RepoTests(unittest.TestCase):
     @classmethod
@@ -217,6 +221,16 @@ class RepoTests(unittest.TestCase):
         self.assertIsNotNone(candidate)
         self.assertTrue(isinstance(candidate, Doctor))
         self.assertEqual(candidate.id, 1)
+
+    # возврат None если все докторы отказались
+    def test_get_job_none_candidate(self):
+        repo = Repo(dal.session)
+        doc3: Doctor = repo.get_doctor(id=96881373)  # Eugeny Bobylev
+        doc3.is_active = False  # временно не доступен (temporarily unavailable)
+        job: IncartJob = repo.get_incartjob(id="1")  # у этого задания есть 2 обращения к док 1 и 2
+        doctor: Doctor = repo.get_job_candidate(job)
+
+        self.assertIsNone(doctor)
 
     def test_get_all_unclosing_jobs(self):
         all_jobs = dal.session.query(IncartJob).all()

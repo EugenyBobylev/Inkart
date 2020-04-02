@@ -20,6 +20,7 @@ class Task(threading.Thread):
     request_time_estimate = 30.0  # время ожидания в мин. согласия на обработку задания, после отправки запроса
     wait_job_processing = 30  # интервал в сек. проверки окончания обработки доктором задания
     job_time_estimate = 120.0  # время ожидания в мин. окончания обработки задания доктором
+    job_delay = 180.0  # время задержки выполнения задачи в мин. (задача отложена из за невозможности найти исполнителя)
 
     def __init__(self, job_id: str, queue: Queue, logger: Logger):
         threading.Thread.__init__(self)
@@ -81,6 +82,8 @@ class Task(threading.Thread):
         self.log_info("run: find_doctor")
         # get free candidate for processing the result
         candidate: Doctor = self.get_candidate(job)
+        if candidate is None:
+            job.restart
 
         jobdoctor = JobDoctor()  # создать объект для отслеживания состояиня обработки задания
         jobdoctor.doctor = candidate
@@ -214,3 +217,4 @@ class Task(threading.Thread):
         Task.request_time_estimate = config["DEFAULT"].getfloat("request_time_estimate")
         Task.wait_job_processing = config["DEFAULT"].getint("wait_job_processing")
         Task.job_time_estimate = config["DEFAULT"].getfloat("job_time_estimate")
+        Task.job_delay = config["DEFAULT"].getfloat("job_delay")
