@@ -9,6 +9,7 @@ import datetime
 from sqlalchemy import orm
 
 from app import IncartTask
+from app.IncartDateTime import get_today_night_start, get_tomorrow_night_finish
 from app.WhatsappChanel import get_api_message
 from app.model import dal, IncartJob, Doctor, DataAccessLayer, JobDoctor
 from app.repo import Repo
@@ -91,6 +92,16 @@ class TestsApp(unittest.TestCase):
         night_hours = night.seconds / 3600
 
         self.assertTrue(isinstance(night, datetime.timedelta))
+        self.assertEqual(night_hours, 12)
+
+    # тест для првоерки модуля IncartDateTime
+    def test_night_incartdatetime(self):
+        today_night_start: datetime.datetime = get_today_night_start()
+        tomorrow_night_finish: datetime.datetime = get_tomorrow_night_finish()
+        night: datetime.timedelta = tomorrow_night_finish - today_night_start
+        night_hours = night.seconds / 3600
+
+        self.assertTrue(isinstance(night_hours, float))
         self.assertEqual(night_hours, 12)
 
 
