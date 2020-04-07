@@ -246,13 +246,4 @@ def get_users():
 
 if __name__ == "__main__":
     q = ""
-    #val = load_data_json()
-    # val = get_api_message(message_id=360611360)
-    # val = get_api_all_clients(20)
-    # val = post_api_message(96881373, 'Привет Евгений Александрович')
-    # val = {'data': [{'id': 359976315, 'text': 'Принимаю', 'coordinates': None, 'transport': 'whatsapp', 'type': 'from_client', 'read': 1, 'created': '2020-03-08T22:24:48 UTC', 'pdf': None, 'remote_id': None, 'recipient_status': None, 'ai_tips': None, 'dialog_id': 12667967, 'operator_id': 59750, 'channel_id': 19286, 'attachments': [], 'photo': None, 'video': None, 'audio': None, 'client_id': 96881373, 'extra_data': {}}], 'meta': {'total': 1, 'limit': 20, 'offset': 0}, 'status': 'success'}
-    # json_data = val['data']
-    # chat_msg: ChatMessage = ChatMessage.from_json(json_data)
-    # print(chat_msg)
-    # chanel_id = 19286
     # sync_clients_with_db()
