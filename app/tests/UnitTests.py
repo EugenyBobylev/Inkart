@@ -9,7 +9,7 @@ import datetime
 from sqlalchemy import orm
 
 from app import IncartTask
-from app.IncartDateTime import get_today_night_start, get_tomorrow_night_finish,add_minutes
+from app.IncartDateTime import get_today, get_today_night_start, get_tomorrow_night_finish,add_minutes,round_datetime
 from app.WhatsappChanel import get_api_message
 from app.model import dal, IncartJob, Doctor, DataAccessLayer, JobDoctor
 from app.repo import Repo
@@ -112,6 +112,37 @@ class TestsApp(unittest.TestCase):
         self.assertEqual(dt_plus_30, datetime.datetime(2020, 6, 10, 0, 30))
         self.assertEqual(dt_minus_30, datetime.datetime(2020, 6, 9, 23, 30))
 
+    def test_round_datetime_90(self):
+        today: datetime.date = get_today()
+        time = datetime.time.fromisoformat("09:48:12.345")
+        dt_before = datetime.datetime.combine(today,time)
+        dt_after = round_datetime(dt_before, 90)
+
+        self.assertEqual(dt_after.hour, 11)
+        self.assertEqual(dt_after.minute, 0)
+        self.assertEqual(dt_after.second,0)
+        self.assertEqual(dt_after.microsecond,0)
+
+    def test_round_datetime_15(self):
+        today: datetime.date = get_today()
+        time1 = datetime.time.fromisoformat("09:18:12.345987")
+        dt1 = datetime.datetime.combine(today, time1)
+        dt_after1 = round_datetime(dt1, 15)  # 09:30:00
+
+        time2 = datetime.time.fromisoformat("09:00:12")
+        dt2 = datetime.datetime.combine(today, time2)
+        dt_after2 = round_datetime(dt2, 15)  # 09:00:00
+
+        time3 = datetime.time.fromisoformat("09:53:12")
+        dt3 = datetime.datetime.combine(today, time3)
+        dt_after3 = round_datetime(dt3, 15)  # 10:00:00
+
+        self.assertEqual(dt_after1.hour, 9)
+        self.assertEqual(dt_after1.minute, 30)
+        self.assertEqual(dt_after2.hour, 9)
+        self.assertEqual(dt_after2.minute, 0)
+        self.assertEqual(dt_after3.hour, 10)
+        self.assertEqual(dt_after3.minute, 0)
 
 class RepoTests(unittest.TestCase):
     @classmethod

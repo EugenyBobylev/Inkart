@@ -62,3 +62,22 @@ def add_minutes(dt: datetime.datetime, minutes: int) -> datetime.datetime:
     """
     datetime_value = dt + datetime.timedelta(minutes=minutes)
     return datetime_value
+
+
+def round_datetime(dt: datetime.datetime, precision: int = 10) -> datetime.datetime:
+    """
+    округлить метку времени до точности заданной минутами от 1  до 60
+    :param dt: метка времени до округления
+    :param precision: точность округления времени в минутах
+    :return:  метка времени после округления
+    """
+    hours = precision // 60  # will need to add hours
+    minutes = precision % 60  # will need to add minutes
+    rounded_minute = 0
+    rounded_datetime = dt.replace(minute=rounded_minute, second=0, microsecond=0)
+    if dt.minute != 0:
+        rounded_minute = dt.minute - (dt.minute % minutes)
+        delta = datetime.timedelta(hours=hours, minutes=minutes)
+        rounded_datetime = dt.replace(minute=rounded_minute, second=0, microsecond=0)
+        rounded_datetime = rounded_datetime + delta
+    return rounded_datetime
