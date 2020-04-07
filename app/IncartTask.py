@@ -12,7 +12,6 @@ from dateutil import parser
 from app.WhatsappChanel import post_api_message, get_api_messages
 from app.model import DataAccessLayer, IncartJob, JobDoctor, Doctor, ChatMessage
 from app.repo import Repo
-from config import Config
 
 
 class Task(threading.Thread):
