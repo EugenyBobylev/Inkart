@@ -9,7 +9,8 @@ import datetime
 from sqlalchemy import orm
 
 from app import IncartTask
-from app.IncartDateTime import get_today, get_today_night_start, get_tomorrow_night_finish,add_minutes,round_datetime
+from app.IncartDateTime import get_today, get_today_night_start, get_tomorrow_night_finish, add_minutes, round_datetime, \
+    get_local_timezone
 from app.WhatsappChanel import get_api_message
 from app.model import dal, IncartJob, Doctor, DataAccessLayer, JobDoctor
 from app.repo import Repo
@@ -143,6 +144,12 @@ class TestsApp(unittest.TestCase):
         self.assertEqual(dt_after2.minute, 0)
         self.assertEqual(dt_after3.hour, 10)
         self.assertEqual(dt_after3.minute, 0)
+
+    def test_local_timezone(self):
+        local_tz = get_local_timezone()
+        now = datetime.datetime.now()
+        timezone_name = local_tz.tzname(now)
+        self.assertEqual(timezone_name, 'UTC+10:00')
 
 class RepoTests(unittest.TestCase):
     @classmethod

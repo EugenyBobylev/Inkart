@@ -243,19 +243,9 @@ def get_users():
         return response
     return None
 
-# data = get_api_modes()
-# data = get_api_transports()
-# data = get_api_channels()
-# data = post_api_client(phone=79246432292 ,nick='OlgaOh')
-# data = put_api_clients(client_id=96881373, client_data={"name": "EugenyBobylev"}) # EvgenyBobylev
-# val = put_api_clients(client_id=105582161, client_data={"name": "OlgaOh", "comment": "Ольга Владимировна Охманюк"}) # OlgaOh
-# val = get_api_clients(client_id=105582161)
-# val = get_api_clients_phone(79247401790)
-# val = post_api_message(client_id=105582161, message='Здравствуйте Ольга Владимировна!')
-# val = get_api_dialogs()
-
 
 if __name__ == "__main__":
+    q = ""
     #val = load_data_json()
     # val = get_api_message(message_id=360611360)
     # val = get_api_all_clients(20)
@@ -265,4 +255,4 @@ if __name__ == "__main__":
     # chat_msg: ChatMessage = ChatMessage.from_json(json_data)
     # print(chat_msg)
     # chanel_id = 19286
-    sync_clients_with_db()
+    # sync_clients_with_db()

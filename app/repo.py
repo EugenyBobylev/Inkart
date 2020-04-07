@@ -7,7 +7,8 @@ from typing import Dict, List
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import FlushError
 
-from app.model import DataAccessLayer, Doctor, IncartJob, dal, JobDoctor
+from app.IncartDateTime import to_utc_datetime, to_local_datetime
+from app.model import Doctor, IncartJob, JobDoctor
 
 
 class Repo(object):
@@ -105,7 +106,6 @@ class Repo(object):
             filter(Doctor.id.notin_(doctors_id)).filter(Doctor.is_active).first()
         return candidate
 
-
     # get all unclosing jobs
     def get_unclosing_jobs(self) -> List[IncartJob]:
         jobs = self.session.query(IncartJob).filter(IncartJob.closed.is_(None)).all()
@@ -129,21 +129,3 @@ class Repo(object):
                 job.doctor_id = None
         self.session.commit()
         return jobs
-
-
-
-def to_utc_datetime(datetimestr) -> datetime:
-    dt: datetime = datetime.strptime(datetimestr, '%Y-%m-%dT%H:%M:%S %Z')
-    if dt.tzinfo is None:
-        utc_zone = tz.gettz('UTC')
-        dt = dt.replace(tzinfo=utc_zone)
-    return dt
-
-
-def to_local_datetime(dt: datetime) -> datetime:
-    local_zone = tz.gettz()
-    if dt.tzinfo is None:
-        utc_zone = tz.gettz('UTC')
-        dt = dt.replace(tzinfo=utc_zone)
-    local_dt = dt.astimezone(local_zone)
-    return local_dt

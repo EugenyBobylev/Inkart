@@ -81,3 +81,26 @@ def round_datetime(dt: datetime.datetime, precision: int = 10) -> datetime.datet
         rounded_datetime = dt.replace(minute=rounded_minute, second=0, microsecond=0)
         rounded_datetime = rounded_datetime + delta
     return rounded_datetime
+
+
+def get_local_timezone() -> datetime.timezone:
+    now_utc = datetime.datetime.utcnow()
+    now = datetime.datetime.now()
+    delta = now - now_utc
+    local_tz = datetime.timezone(offset=delta)
+    return local_tz
+
+
+def to_utc_datetime(datetimestr: str) -> datetime.datetime:
+    dt = datetime.datetime.strptime(datetimestr, '%Y-%m-%dT%H:%M:%S %Z')
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=datetime.timezone.utc)
+    return dt
+
+
+def to_local_datetime(dt: datetime) -> datetime:
+    local_zone = get_local_timezone()
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo= datetime.timezone.utc)
+    local_dt = dt.astimezone(local_zone)
+    return local_dt
