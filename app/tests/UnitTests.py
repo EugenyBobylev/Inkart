@@ -9,7 +9,7 @@ import datetime
 from sqlalchemy import orm
 
 from app import IncartTask
-from app.IncartDateTime import get_today_night_start, get_tomorrow_night_finish
+from app.IncartDateTime import get_today_night_start, get_tomorrow_night_finish,add_minutes
 from app.WhatsappChanel import get_api_message
 from app.model import dal, IncartJob, Doctor, DataAccessLayer, JobDoctor
 from app.repo import Repo
@@ -103,6 +103,14 @@ class TestsApp(unittest.TestCase):
 
         self.assertTrue(isinstance(night_hours, float))
         self.assertEqual(night_hours, 12)
+
+    def test_add_minutes(self):
+        dt = datetime.datetime(2020, 6, 10, 0, 0)
+        dt_plus_30 = add_minutes(dt,30)
+        dt_minus_30 = add_minutes(dt, -30)
+
+        self.assertEqual(dt_plus_30, datetime.datetime(2020, 6, 10, 0, 30))
+        self.assertEqual(dt_minus_30, datetime.datetime(2020, 6, 9, 23, 30))
 
 
 class RepoTests(unittest.TestCase):

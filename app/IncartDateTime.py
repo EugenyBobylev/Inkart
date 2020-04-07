@@ -45,9 +45,20 @@ def get_tomorrow_night_finish() -> datetime.datetime:
     return tomorrow_night_finish
 
 
-def get_str_from_ini(param:str) -> str:
+def get_str_from_ini(param: str) -> str:
     ini = os.path.join(Config.BASEPATH, 'incart.ini')
     config = configparser.ConfigParser()
     config.read(ini)
     value = config["DEFAULT"][param]
     return value
+
+
+def add_minutes(dt: datetime.datetime, minutes: int) -> datetime.datetime:
+    """
+     изменим (добавим или вычтем) значение метки времени на указанной кол. минут
+    :param dt: метка времени
+    :param minutes: значение в минутах на которе изменим метку времени
+    :return: измененное значение метки времени
+    """
+    datetime_value = dt + datetime.timedelta(minutes=minutes)
+    return datetime_value
