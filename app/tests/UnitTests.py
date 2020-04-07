@@ -4,7 +4,7 @@ import threading
 import unittest
 from typing import List
 from unittest.mock import patch, Mock
-from datetime import datetime, timezone, timedelta
+import datetime
 
 from sqlalchemy import orm
 
@@ -57,6 +57,9 @@ class TestsApp(unittest.TestCase):
         self.assertTrue(config["DEFAULT"].getint("wait_job_processing") > 0)
         self.assertTrue(config["DEFAULT"].getfloat("job_time_estimate") > 0.0)
         self.assertTrue(config["DEFAULT"].getfloat("job_delay") > 0.0)
+        self.assertTrue(isinstance(config["DEFAULT"]["night_start"], str))
+        self.assertEqual(config["DEFAULT"]["night_start"], '21:00:00')
+        self.assertEqual(config["DEFAULT"]["night_finish"], '09:00:00')
 
     def test_icart_task_init(self):
         IncartTask.Task.wait_confirm_request = 0
@@ -75,6 +78,20 @@ class TestsApp(unittest.TestCase):
         self.assertTrue(IncartTask.Task.wait_job_processing > 0)
         self.assertTrue(IncartTask.Task.job_time_estimate > 0.0)
         self.assertTrue(IncartTask.Task.job_delay > 0.0)
+
+    # тестируем учет ночных часов
+    def test_night_hours(self):
+        today = datetime.date.today()
+        night_start = datetime.time.fromisoformat('21:00:00')
+        today_night_start = datetime.datetime.combine(today, night_start)
+        tomorrow = today + datetime.timedelta(days=1)
+        night_end = datetime.time.fromisoformat('09:00:00')
+        tomorrow_night_end = datetime.datetime.combine(tomorrow, night_end)
+        night = tomorrow_night_end - today_night_start
+        night_hours = night.seconds / 3600
+
+        self.assertTrue(isinstance(night, datetime.timedelta))
+        self.assertEqual(night_hours, 12)
 
 
 class RepoTests(unittest.TestCase):
@@ -171,7 +188,7 @@ class RepoTests(unittest.TestCase):
         repo = Repo(dal.session)
         jobdoctor = repo.get_jobdoctor(doctor_id=1, job_id='1')
         jobdoctor.request_id = 23
-        jobdoctor.request_started = datetime.now().astimezone(timezone.utc)
+        jobdoctor.request_started = datetime.datetime.now().astimezone(datetime.timezone.utc)
         ok: bool = repo.update_jobdoctor(jobdoctor)
         self.assertTrue(ok)
 
@@ -264,7 +281,7 @@ def prep_db(session: orm.session.Session):
 
     job_doctor2 = JobDoctor(job_id="1", doctor_id=2)
     job_doctor2.request_id = '2'
-    job_doctor2.request_sended = datetime.utcnow()
+    job_doctor2.request_sended = datetime.datetime.utcnow()
     session.add(job_doctor2)
     session.commit()
 
