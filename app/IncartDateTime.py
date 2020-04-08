@@ -7,7 +7,6 @@ import os
 
 from config import Config
 
-
 def get_today() -> datetime.date:
     today = datetime.date.today()
     return today
@@ -31,18 +30,53 @@ def get_night_finish() -> datetime.time:
     return night_finish
 
 
+def get_date_night_start(date: datetime.date) -> datetime.datetime:
+    night_start: datetime.time = get_night_start()
+    today_night_start = datetime.datetime.combine(date, night_start)
+    return today_night_start
+
+
 def get_today_night_start() -> datetime.datetime:
     today: datetime.date = get_today()
-    night_start: datetime.time = get_night_start()
-    today_night_start = datetime.datetime.combine(today, night_start)
-    return today_night_start
+    return get_date_night_start(today)
+
+
+def get_date_night_finish(date: datetime.date) -> datetime.datetime:
+    night_finish: datetime.time = get_night_finish()
+    tomorrow_night_finish: datetime.datetime = datetime.datetime.combine(date, night_finish)
+    return tomorrow_night_finish
 
 
 def get_tomorrow_night_finish() -> datetime.datetime:
     tomorrow: datetime.date = get_tomorrow()
-    night_finish: datetime.time = get_night_finish()
-    tomorrow_night_finish: datetime.datetime = datetime.datetime.combine(tomorrow, night_finish)
-    return tomorrow_night_finish
+    return get_date_night_finish(tomorrow)
+
+
+def get_restart_job(job_delay_start: datetime.datetime, precission: int = 10) -> datetime.datetime:
+    """
+            calculate job restart time
+    (Рассчитать время перезапуска задания)
+
+    :param job_dalay_start: время начала задержки
+    :param precission:  точность округления расчета времени задержки
+    :return: метка времени следующего возможного перезапуска задания
+    """
+    ini_job_delay = get_str_from_ini("job_delay")
+    job_delay = float(ini_job_delay)
+
+    night_start = get_date_night_start(job_delay_start)
+    night_finish = get_date_night_finish(job_delay_start + datetime.timedelta(days=1))
+    # задержка начинаетис и заканчивается до наступления ночи или заканчивается утром
+    restart_job_time: datetime.datetime = add_minutes(job_delay_start, job_delay)
+    restart_job_time = round_datetime(restart_job_time, precission)
+    # задержка начинается вечером и заканчивается ночью
+    if job_delay_start <= night_start < restart_job_time <= night_finish:
+        restart_job_time = night_finish
+    # задержка начинается ночью и закончилась ночью
+    if night_start <= job_delay_start < restart_job_time <= night_finish:
+        restart_job_time = night_finish
+
+    return restart_job_time
 
 
 def get_str_from_ini(param: str) -> str:
@@ -53,11 +87,11 @@ def get_str_from_ini(param: str) -> str:
     return value
 
 
-def add_minutes(dt: datetime.datetime, minutes: int) -> datetime.datetime:
+def add_minutes(dt: datetime.datetime, minutes) -> datetime.datetime:
     """
      изменим (добавим или вычтем) значение метки времени на указанной кол. минут
     :param dt: метка времени
-    :param minutes: значение в минутах на которе изменим метку времени
+    :param minutes: значение в минутах на которе изменим метку времени (int or float)
     :return: измененное значение метки времени
     """
     datetime_value = dt + datetime.timedelta(minutes=minutes)
