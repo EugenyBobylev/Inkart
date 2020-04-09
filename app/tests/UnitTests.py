@@ -1,6 +1,5 @@
 import configparser
 import os
-import threading
 import unittest
 from typing import List
 from unittest.mock import patch, Mock
@@ -163,7 +162,13 @@ class TestsApp(unittest.TestCase):
         self.assertTrue(isinstance(delay_finish1, datetime.datetime))
         self.assertEqual(datetime.datetime.fromisoformat('2020-04-09 12:30:00'), delay_finish1)
 
-    def test_get_restart_job_with_night_1(self):
+    @patch('app.IncartDateTime.get_night_start')
+    @patch('app.IncartDateTime.get_night_finish')
+    def test_get_restart_job_with_night_1(self, mock_get_night_finish, mock_get_night_start):
+        # настройка значений возвращемых mock - объектами
+        mock_get_night_start.return_value = datetime.time.fromisoformat('21:00:00')
+        mock_get_night_finish.return_value = datetime.time.fromisoformat('09:00:00')
+
         # старт задержки до начала ночи, окончание ночью
         delay_start1 = datetime.datetime.fromisoformat('2020-04-09 19:20:34.123456')
         delay_finish1 = get_restart_job(delay_start1, 30)
@@ -178,7 +183,12 @@ class TestsApp(unittest.TestCase):
         self.assertEqual(datetime.datetime.fromisoformat('2020-04-10 09:00:00'), delay_finish2)
         self.assertEqual(datetime.datetime.fromisoformat('2020-04-10 10:30:00'), delay_finish3)
 
-    def test_get_wait_time(self):
+    @patch('app.IncartDateTime.get_night_start')
+    @patch('app.IncartDateTime.get_night_finish')
+    def test_get_wait_time(self, mock_get_night_finish, mock_get_night_start):
+        mock_get_night_start.return_value = datetime.time.fromisoformat('21:00:00')
+        mock_get_night_finish.return_value = datetime.time.fromisoformat('09:00:00')
+
         start1 = datetime.datetime.fromisoformat(('2020-04-09 12:20:34.123'))
         finish1 = get_wait_time(start1, 120.0, 30)
         start2 = datetime.datetime.fromisoformat(('2020-04-09 19:20:34.123'))
