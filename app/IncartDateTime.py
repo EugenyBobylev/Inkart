@@ -52,28 +52,25 @@ def get_tomorrow_night_finish() -> datetime.datetime:
     return get_date_night_finish(tomorrow)
 
 
-def get_restart_job(job_delay_start: datetime.datetime, precission: int = 10) -> datetime.datetime:
+def get_delay_time(start: datetime.datetime, wait = 180.0, precission: int = 10) -> datetime.datetime:
     """
             calculate job restart time
-    (Рассчитать время перезапуска задания)
+    (Рассчитать время задержки)
 
-    :param job_dalay_start: время начала задержки
+    :param start: время начала задержки
     :param precission:  точность округления расчета времени задержки
-    :return: метка времени следующего возможного перезапуска задания
+    :return: метка времени окончания задержки
     """
-    ini_job_delay = get_str_from_ini("job_delay")
-    job_delay = float(ini_job_delay)
-
-    night_start = get_date_night_start(job_delay_start)
-    night_finish = get_date_night_finish(job_delay_start + datetime.timedelta(days=1))
+    night_start = get_date_night_start(start)
+    night_finish = get_date_night_finish(start + datetime.timedelta(days=1))
     # задержка начинается и заканчивается до наступления ночи или заканчивается утром
-    restart_job_time: datetime.datetime = add_minutes(job_delay_start, job_delay)
+    restart_job_time: datetime.datetime = add_minutes(start, wait)
     restart_job_time = round_datetime(restart_job_time, precission)
     # задержка начинается вечером и заканчивается ночью
-    if job_delay_start <= night_start < restart_job_time <= night_finish:
+    if start <= night_start < restart_job_time <= night_finish:
         restart_job_time = night_finish
     # задержка начинается ночью и закончилась ночью
-    if night_start <= job_delay_start < restart_job_time <= night_finish:
+    if night_start <= start < restart_job_time <= night_finish:
         restart_job_time = night_finish
 
     return restart_job_time
@@ -96,7 +93,6 @@ def get_wait_time(start: datetime.datetime, wait: float, precission: int = 10) -
     if start <= night_start < finish <= night_finish:
         finish = finish + (night_finish - night_start)
     return finish
-
 
 
 def get_str_from_ini(param: str) -> str:

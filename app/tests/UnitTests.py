@@ -9,7 +9,7 @@ from sqlalchemy import orm
 
 from app import IncartTask
 from app.IncartDateTime import get_today, get_today_night_start, get_tomorrow_night_finish, add_minutes, round_datetime, \
-    get_local_timezone, get_restart_job, get_wait_time
+    get_local_timezone, get_delay_time, get_wait_time
 from app.WhatsappChanel import get_api_message
 from app.model import dal, IncartJob, Doctor, DataAccessLayer, JobDoctor
 from app.repo import Repo
@@ -156,9 +156,15 @@ class TestsApp(unittest.TestCase):
         timezone_name = local_tz.tzname(now)
         self.assertEqual(timezone_name, 'UTC+10:00')
 
-    def test_get_restart_job_without_night(self):
+    @patch('app.IncartDateTime.get_night_start')
+    @patch('app.IncartDateTime.get_night_finish')
+    def test_get_restart_job_without_night(self, mock_get_night_finish, mock_get_night_start):
+        # настройка значений возвращемых mock - объектами
+        mock_get_night_start.return_value = datetime.time.fromisoformat('21:00:00')
+        mock_get_night_finish.return_value = datetime.time.fromisoformat('09:00:00')
+
         delay_start1 = datetime.datetime.fromisoformat('2020-04-09 09:12:34.123456')
-        delay_finish1 = get_restart_job(delay_start1, 30)
+        delay_finish1 = get_delay_time(delay_start1, 180.0, 30)
         self.assertTrue(isinstance(delay_finish1, datetime.datetime))
         self.assertEqual(datetime.datetime.fromisoformat('2020-04-09 12:30:00'), delay_finish1)
 
@@ -171,13 +177,13 @@ class TestsApp(unittest.TestCase):
 
         # старт задержки до начала ночи, окончание ночью
         delay_start1 = datetime.datetime.fromisoformat('2020-04-09 19:20:34.123456')
-        delay_finish1 = get_restart_job(delay_start1, 30)
+        delay_finish1 = get_delay_time(delay_start1, 180.0, 30)
         # старт задержки ночью, окончание ночью
         delay_start2 = datetime.datetime.fromisoformat('2020-04-09 23:20:34.123456')
-        delay_finish2 = get_restart_job(delay_start2, 30)
+        delay_finish2 = get_delay_time(delay_start2, 180.0, 30)
         # старт задержки ночью, окончание утром
         delay_start3 = datetime.datetime.fromisoformat('2020-04-10 07:20:34.123456')
-        delay_finish3 = get_restart_job(delay_start3, 30)
+        delay_finish3 = get_delay_time(delay_start3, 180.0, 30)
 
         self.assertEqual(datetime.datetime.fromisoformat('2020-04-10 09:00:00'), delay_finish1)
         self.assertEqual(datetime.datetime.fromisoformat('2020-04-10 09:00:00'), delay_finish2)
