@@ -9,7 +9,7 @@ from sqlalchemy import orm
 
 from app import IncartTask
 from app.IncartDateTime import get_today, get_today_night_start, get_tomorrow_night_finish, add_minutes, round_datetime, \
-    get_local_timezone, get_delay_time, get_wait_time
+    get_local_timezone, get_delay_time, get_wait_time, to_local_datetime
 from app.WhatsappChanel import get_api_message
 from app.model import dal, IncartJob, Doctor, DataAccessLayer, JobDoctor
 from app.repo import Repo
@@ -203,6 +203,28 @@ class TestsApp(unittest.TestCase):
         self.assertEqual(datetime.datetime.fromisoformat('2020-04-09 14:30:00'), finish1)
         self.assertEqual(datetime.datetime.fromisoformat('2020-04-10 09:30:00'), finish2)
 
+    # проверим наличие инф. о timezone
+    def test_now_tz(self):
+        # значение now содержит tzinfo
+        now = datetime.datetime.now().astimezone(tz=datetime.timezone.utc)
+        self.assertIsNotNone(now.tzinfo)
+        self.assertTrue(now.tzinfo == datetime.timezone.utc)
+        # значение now_local не содержит tzinfo
+        now_local =  datetime.datetime.now()
+        self.assertIsNone(now_local.tzinfo)
+
+    def test_algorithm_time_from_utc_to_local(self):
+        now_utc = datetime.datetime.now().astimezone(tz=datetime.timezone.utc)
+        local_tz: datetime.timezone = get_local_timezone()
+        now_local = now_utc.astimezone(tz=local_tz)
+        offset = local_tz.utcoffset(now_local)  # разница между локальным временем и Гринвичем
+        self.assertEqual((now_utc+offset).time(), now_local.time())  #
+
+    def test_to_local_datetime(self):
+        dt_utc = datetime.datetime.fromisoformat('2020-04-20 11:30:00+00:00')
+        dt_local = to_local_datetime(dt_utc)
+        self.assertEqual(datetime.datetime.fromisoformat('2020-04-20 21:30+10:00'), dt_local)
+        self.assertTrue(2)
 
 class RepoTests(unittest.TestCase):
     @classmethod
