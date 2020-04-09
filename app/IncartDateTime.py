@@ -52,7 +52,7 @@ def get_tomorrow_night_finish() -> datetime.datetime:
     return get_date_night_finish(tomorrow)
 
 
-def get_delay_time(start: datetime.datetime, wait = 180.0, precission: int = 10) -> datetime.datetime:
+def get_delay_time(start: datetime.datetime, wait=180.0, precission: int=10) -> datetime.datetime:
     """
             calculate job restart time
     (Рассчитать время задержки)
@@ -76,7 +76,7 @@ def get_delay_time(start: datetime.datetime, wait = 180.0, precission: int = 10)
     return restart_job_time
 
 
-def get_wait_time(start: datetime.datetime, wait: float, precission: int = 10) -> datetime.datetime:
+def get_wait_time(start: datetime.datetime, wait: float, precission: int=10) -> datetime.datetime:
     """
      Calculate job processing timeout
     :param start: начало ожидания обработки задания

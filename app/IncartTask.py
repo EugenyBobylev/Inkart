@@ -9,6 +9,7 @@ from typing import List, Dict
 
 from dateutil import parser
 
+from app.IncartDateTime import get_wait_time, get_delay_time
 from app.WhatsappChanel import post_api_message, get_api_messages
 from app.model import DataAccessLayer, IncartJob, JobDoctor, Doctor, ChatMessage
 from app.repo import Repo
@@ -82,7 +83,7 @@ class Task(threading.Thread):
 
     # расчитать и записать в задание время следующего рестарта
     def set_restart_datetime(self, job):
-        job.restart = datetime.now().astimezone(timezone.utc) + timedelta(minutes=Task.job_delay)
+        job.restart = get_delay_time(datetime.now().astimezone(timezone.utc), wait=Task.job_delay)
         self.update_job(job)
 
     # Найти исполнителя на выполнение задания
@@ -161,7 +162,7 @@ class Task(threading.Thread):
         data = result["data"]
         jobdoctor.job_start_id = data['message_id']
         jobdoctor.job_started = datetime.now().astimezone(timezone.utc)
-        jobdoctor.job_time_estimate = jobdoctor.job_started + timedelta(minutes=Task.job_time_estimate)
+        jobdoctor.job_time_estimate = get_wait_time(jobdoctor.job_started, wait=Task.job_time_estimate)
         self.update_jobdoctor(jobdoctor)
         # ждем результат
         self.wait_processing(jobdoctor)
