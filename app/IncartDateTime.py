@@ -66,7 +66,7 @@ def get_restart_job(job_delay_start: datetime.datetime, precission: int = 10) ->
 
     night_start = get_date_night_start(job_delay_start)
     night_finish = get_date_night_finish(job_delay_start + datetime.timedelta(days=1))
-    # задержка начинаетис и заканчивается до наступления ночи или заканчивается утром
+    # задержка начинается и заканчивается до наступления ночи или заканчивается утром
     restart_job_time: datetime.datetime = add_minutes(job_delay_start, job_delay)
     restart_job_time = round_datetime(restart_job_time, precission)
     # задержка начинается вечером и заканчивается ночью
@@ -77,6 +77,26 @@ def get_restart_job(job_delay_start: datetime.datetime, precission: int = 10) ->
         restart_job_time = night_finish
 
     return restart_job_time
+
+
+def get_wait_time(start: datetime.datetime, wait: float, precission: int = 10) -> datetime.datetime:
+    """
+     Calculate job processing timeout
+    :param start: начало ожидания обработки задания
+    :param wait: плановое время в мин на выполнение задания
+    :param precission: точность округления расчета времни ожидания
+    :return: метка времени завершения обработки задания
+    """
+    night_start = get_date_night_start(start)
+    night_finish = get_date_night_finish(start + datetime.timedelta(days=1))
+    # ожидание начинается и заканчивается до ночи
+    finish = add_minutes(start, wait)
+    finish = round_datetime(finish, precission)
+    # ожидание начинается днем и закнчивается ночью
+    if start <= night_start < finish <= night_finish:
+        finish = finish + (night_finish - night_start)
+    return finish
+
 
 
 def get_str_from_ini(param: str) -> str:

@@ -10,7 +10,7 @@ from sqlalchemy import orm
 
 from app import IncartTask
 from app.IncartDateTime import get_today, get_today_night_start, get_tomorrow_night_finish, add_minutes, round_datetime, \
-    get_local_timezone, get_restart_job
+    get_local_timezone, get_restart_job, get_wait_time
 from app.WhatsappChanel import get_api_message
 from app.model import dal, IncartJob, Doctor, DataAccessLayer, JobDoctor
 from app.repo import Repo
@@ -178,6 +178,14 @@ class TestsApp(unittest.TestCase):
         self.assertEqual(datetime.datetime.fromisoformat('2020-04-10 09:00:00'), delay_finish2)
         self.assertEqual(datetime.datetime.fromisoformat('2020-04-10 10:30:00'), delay_finish3)
 
+    def test_get_wait_time(self):
+        start1 = datetime.datetime.fromisoformat(('2020-04-09 12:20:34.123'))
+        finish1 = get_wait_time(start1, 120.0, 30)
+        start2 = datetime.datetime.fromisoformat(('2020-04-09 19:20:34.123'))
+        finish2 = get_wait_time(start2, 120.0, 30)
+
+        self.assertEqual(datetime.datetime.fromisoformat('2020-04-09 14:30:00'), finish1)
+        self.assertEqual(datetime.datetime.fromisoformat('2020-04-10 09:30:00'), finish2)
 
 
 class RepoTests(unittest.TestCase):
