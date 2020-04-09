@@ -162,10 +162,10 @@ class TestsApp(unittest.TestCase):
         # настройка значений возвращемых mock - объектами
         mock_get_night_start.return_value = datetime.time.fromisoformat('21:00:00')
         mock_get_night_finish.return_value = datetime.time.fromisoformat('09:00:00')
-
+        # локальное время
         delay_start1 = datetime.datetime.fromisoformat('2020-04-09 09:12:34.123456')
         delay_finish1 = get_delay_time(delay_start1, 180.0, 30)
-
+        # время по гринвичу
         delay_start2 = delay_start1.astimezone(tz=datetime.timezone.utc)
         delay_finish2 = get_delay_time(delay_start2, 180.0, 30)
 
@@ -197,16 +197,24 @@ class TestsApp(unittest.TestCase):
     @patch('app.IncartDateTime.get_night_start')
     @patch('app.IncartDateTime.get_night_finish')
     def test_get_wait_time(self, mock_get_night_finish, mock_get_night_start):
+        # настройка значений возвращаемых mock - объектами
         mock_get_night_start.return_value = datetime.time.fromisoformat('21:00:00')
         mock_get_night_finish.return_value = datetime.time.fromisoformat('09:00:00')
-
+        # local datetime
         start1 = datetime.datetime.fromisoformat(('2020-04-09 12:20:34.123'))
         finish1 = get_wait_time(start1, 120.0, 30)
         start2 = datetime.datetime.fromisoformat(('2020-04-09 19:20:34.123'))
         finish2 = get_wait_time(start2, 120.0, 30)
+        # datetime with timezone
+        start3 = start1.astimezone(tz=datetime.timezone.utc)  # в рабочее время
+        finish3 = get_wait_time(start3, 120.0, 30)
+        start4 = start2.astimezone(tz=datetime.timezone.utc)  # с окончанием ноьчю
+        finish4 = get_wait_time(start4, 120.0, 30)
 
         self.assertEqual(datetime.datetime.fromisoformat('2020-04-09 14:30:00'), finish1)
         self.assertEqual(datetime.datetime.fromisoformat('2020-04-10 09:30:00'), finish2)
+        self.assertEqual(datetime.datetime.fromisoformat('2020-04-09 04:30:00+00:00'), finish3)
+        self.assertEqual(datetime.datetime.fromisoformat('2020-04-09 23:30:00+00:00'), finish4)
 
     # проверим наличие инф. о timezone
     def test_now_tz(self):

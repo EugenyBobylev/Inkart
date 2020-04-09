@@ -67,7 +67,7 @@ def get_delay_time(start: datetime.datetime, wait=180.0, precission: int = 10) -
 
     if start.tzinfo == datetime.timezone.utc:
         night_start = night_start.astimezone(tz=datetime.timezone.utc)
-        night_finish = night_start.astimezone(tz=datetime.timezone.utc)
+        night_finish = night_finish.astimezone(tz=datetime.timezone.utc)
 
     # задержка начинается и заканчивается до наступления ночи или заканчивается утром
     restart_job_time: datetime.datetime = add_minutes(start, wait)
@@ -82,7 +82,7 @@ def get_delay_time(start: datetime.datetime, wait=180.0, precission: int = 10) -
     return restart_job_time
 
 
-def get_wait_time(start: datetime.datetime, wait: float, precission: int = 10) -> datetime.datetime:
+def get_wait_time(start: datetime.datetime, wait=120.0, precission: int = 10) -> datetime.datetime:
     """
      Calculate job processing timeout
     :param start: начало ожидания обработки задания
@@ -92,6 +92,11 @@ def get_wait_time(start: datetime.datetime, wait: float, precission: int = 10) -
     """
     night_start = get_date_night_start(start)
     night_finish = get_date_night_finish(start + datetime.timedelta(days=1))
+
+    if start.tzinfo == datetime.timezone.utc:
+        night_start = night_start.astimezone(tz=datetime.timezone.utc)
+        night_finish = night_finish.astimezone(tz=datetime.timezone.utc)
+
     # ожидание начинается и заканчивается до ночи
     finish = add_minutes(start, wait)
     finish = round_datetime(finish, precission)
