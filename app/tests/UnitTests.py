@@ -165,8 +165,13 @@ class TestsApp(unittest.TestCase):
 
         delay_start1 = datetime.datetime.fromisoformat('2020-04-09 09:12:34.123456')
         delay_finish1 = get_delay_time(delay_start1, 180.0, 30)
+
+        delay_start2 = delay_start1.astimezone(tz=datetime.timezone.utc)
+        delay_finish2 = get_delay_time(delay_start2, 180.0, 30)
+
         self.assertTrue(isinstance(delay_finish1, datetime.datetime))
         self.assertEqual(datetime.datetime.fromisoformat('2020-04-09 12:30:00'), delay_finish1)
+        self.assertEqual(datetime.datetime.fromisoformat('2020-04-09 02:30:00+00:00'), delay_finish2)
 
     @patch('app.IncartDateTime.get_night_start')
     @patch('app.IncartDateTime.get_night_finish')

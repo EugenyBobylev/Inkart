@@ -64,6 +64,11 @@ def get_delay_time(start: datetime.datetime, wait=180.0, precission: int = 10) -
     """
     night_start = get_date_night_start(start)
     night_finish = get_date_night_finish(start + datetime.timedelta(days=1))
+
+    if start.tzinfo == datetime.timezone.utc:
+        night_start = night_start.astimezone(tz=datetime.timezone.utc)
+        night_finish = night_start.astimezone(tz=datetime.timezone.utc)
+
     # задержка начинается и заканчивается до наступления ночи или заканчивается утром
     restart_job_time: datetime.datetime = add_minutes(start, wait)
     restart_job_time = round_datetime(restart_job_time, precission)
