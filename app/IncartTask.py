@@ -1,5 +1,4 @@
 import configparser
-import os
 import threading
 import time
 from datetime import timedelta, datetime, timezone
@@ -83,7 +82,8 @@ class Task(threading.Thread):
 
     # расчитать и записать в задание время следующего рестарта
     def set_restart_datetime(self, job):
-        job.restart = get_delay_time(datetime.now().astimezone(timezone.utc), wait=Task.job_delay)
+        now_utc = datetime.now().astimezone(timezone.utc)
+        job.restart = get_delay_time(now_utc, wait=Task.job_delay)
         self.update_job(job)
 
     # Найти исполнителя на выполнение задания
@@ -153,16 +153,18 @@ class Task(threading.Thread):
     # отправить задание на обработку
     def send_job(self, jobdoctor: JobDoctor) -> None:
         self.log_info("run: send_job")
+        start = datetime.now()
+        finish = get_wait_time(start, wait=Task.job_time_estimate)
         msg = "Скачайте задание <тут адрес>\n" \
-              "Ждем результат через 2 ч."
+              f"Ждем результат  {finish}."
         result = post_api_message(jobdoctor.doctor_id, msg)
         status = result["status"]
         if status != 'success':
             return
         data = result["data"]
         jobdoctor.job_start_id = data['message_id']
-        jobdoctor.job_started = datetime.now().astimezone(timezone.utc)
-        jobdoctor.job_time_estimate = get_wait_time(jobdoctor.job_started, wait=Task.job_time_estimate)
+        jobdoctor.job_started = start.astimezone(timezone.utc)
+        jobdoctor.job_time_estimate = finish.astimezone(timezone.utc)
         self.update_jobdoctor(jobdoctor)
         # ждем результат
         self.wait_processing(jobdoctor)
@@ -170,8 +172,8 @@ class Task(threading.Thread):
     # выполнения провеоки окончания обработки задания доктором (Ожидание завершения обработки доктором)
     def wait_processing(self, jobdoctor: JobDoctor) -> None:
         self.log_info("run: wait_processing")
-        now = datetime.now().astimezone(timezone.utc)
-        while now < jobdoctor.job_time_estimate:
+        now_utc = datetime.now().astimezone(timezone.utc)
+        while now_utc < jobdoctor.job_time_estimate:
             val = get_api_messages(jobdoctor.doctor_id, jobdoctor.job_started)
             status = val['status']
             if status != 'success':

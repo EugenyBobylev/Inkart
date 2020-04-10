@@ -121,11 +121,13 @@ if __name__ == "__main__":
     init()
     dal.connect()
     # подготовить данные
-    # clear_data_in_db()
-    # set_mail_unread()
-    jobid_queue = load_queue_from_db()
+    clear_data_in_db()
+    set_mail_unread()
+    # jobid_queue = load_queue_from_db()
+
     # Проверка цикла работы задания
-    # check_new_email()
+    check_new_email()
     check_job_queue()
+
     # запустить полный цикл обработки
     # tl.start(block=True)
