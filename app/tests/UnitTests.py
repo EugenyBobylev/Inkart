@@ -9,7 +9,7 @@ from sqlalchemy import orm
 
 from app import IncartTask
 from app.IncartDateTime import get_today, get_today_night_start, get_tomorrow_night_finish, add_minutes, round_datetime, \
-    get_local_timezone, get_delay_time, get_wait_time, to_local_datetime
+    get_local_timezone, get_delay_time, get_wait_time, to_local_datetime, replace_timezone
 from app.WhatsappChanel import get_api_message
 from app.model import dal, IncartJob, Doctor, DataAccessLayer, JobDoctor
 from app.repo import Repo
@@ -223,8 +223,13 @@ class TestsApp(unittest.TestCase):
         self.assertIsNotNone(now.tzinfo)
         self.assertTrue(now.tzinfo == datetime.timezone.utc)
         # значение now_local не содержит tzinfo
-        now_local =  datetime.datetime.now()
+        now_local = datetime.datetime.now()
         self.assertIsNone(now_local.tzinfo)
+        # проверим внедрение tzinfo без изменения значения time
+        dt = datetime.datetime.fromisoformat('2020-04-10 10:15:00')
+        self.assertIsNone(dt.tzinfo)
+        dt_tz = dt.replace(tzinfo=datetime.timezone.utc)
+        self.assertIsNotNone(dt_tz.tzinfo)
 
     def test_algorithm_time_from_utc_to_local(self):
         now_utc = datetime.datetime.now().astimezone(tz=datetime.timezone.utc)
@@ -238,6 +243,20 @@ class TestsApp(unittest.TestCase):
         dt_local = to_local_datetime(dt_utc)
         self.assertEqual(datetime.datetime.fromisoformat('2020-04-20 21:30+10:00'), dt_local)
         self.assertTrue(2)
+
+    def test_replace_timezone(self):
+        # utc
+        dt = datetime.datetime.fromisoformat('2020-04-20 10:45:00')
+        dt_utc = replace_timezone(dt)  # по умолчанию utc
+        # utc + 10:00
+        tz_plus_10 = datetime.timezone(offset=datetime.timedelta(hours=10))
+        dt_plus_10 = replace_timezone(dt, tz_plus_10)
+
+        self.assertIsNotNone(dt_utc.tzinfo)
+        self.assertEqual(dt_utc.tzinfo, datetime.timezone.utc)
+        self.assertIsNotNone(dt_plus_10.tzinfo)
+        self.assertEqual(dt_plus_10.tzinfo, tz_plus_10)
+
 
 class RepoTests(unittest.TestCase):
     @classmethod

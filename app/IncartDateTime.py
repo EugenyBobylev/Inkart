@@ -159,6 +159,19 @@ def to_utc_datetime(datetimestr: str) -> datetime.datetime:
     return dt
 
 
+def replace_timezone(dt: datetime.datetime, timezone=datetime.timezone.utc) -> datetime.datetime:
+    """
+    Replace tzinfo if it is None
+    :param dt: datetime is with date, time but without tzinfo
+    :param timezone: included timezone
+    :return: dt is with date, time and with tz info
+    """
+    if timezone is None:
+        return dt
+    dt_after = dt.replace(tzinfo=timezone)
+    return dt_after
+
+
 def to_local_datetime(dt: datetime) -> datetime:
     local_zone = get_local_timezone()
     if dt.tzinfo is None:
