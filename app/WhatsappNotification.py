@@ -1,6 +1,6 @@
 import configparser
 import logging
-import os
+from pathlib import Path
 import queue
 from typing import List
 
@@ -26,8 +26,8 @@ check_job_queue_interval = 5   # интервал в сек. проверки п
 # Выполнить инициализацию глобальных переменных
 @tl.job(interval=timedelta(seconds=10))
 def init():
-    ini = os.path.join(Config.BASEPATH, 'incart.ini')
-    if os.path.isfile(ini):
+    ini = Path('..') / 'incart.ini'
+    if ini.exists():
         config = configparser.ConfigParser()
         config.read(ini)
         global check_new_email_interval
@@ -39,12 +39,12 @@ def init():
 
 @tl.job(interval=timedelta(seconds=check_new_email_interval))
 def check_new_email():
-    log_info(f"run: check_new_email, no new email {check_new_email_interval} c")
+    log_info(f"run: check_new_email, new email every {check_new_email_interval} sec.")
     srv = get_service()
     new_messages = get_all_unread_emails(srv)
     count = len(new_messages)
     if count > 0:
-        log_info(f"run: check_new_email, has new email(s)")
+        log_info(f"run: check_new_email, has {count} new email(s)")
         with dal.session_scope() as session:
             repo = Repo(session)
             for message in new_messages:
@@ -60,7 +60,7 @@ def check_new_email():
 
 @tl.job(interval=timedelta(seconds=check_job_queue_interval))
 def check_job_queue():
-    log_info(f"run: check_job_queue every {check_job_queue_interval} c.")
+    log_info(f"run: check_job_queue every {check_job_queue_interval} sec.")
     if not jobid_queue.empty():
         log_info(f"run: check_job_queue jobid_queue is not empty")
         job_id: str = jobid_queue.get()
@@ -80,9 +80,9 @@ def load_queue_from_db() -> queue.Queue:
     return q
 
 
-def create_logger(name: str = 'test logger') -> logging.Logger:
-    logger = logging.getLogger('мой логгер')
-    logger.setLevel(logging.INFO)
+def create_logger() -> logging.Logger:
+    _logger = logging.getLogger('мой логгер')
+    _logger.setLevel(logging.INFO)
     # create console log handler
     ch = logging.StreamHandler()
     ch.setLevel(logging.INFO)
@@ -90,9 +90,9 @@ def create_logger(name: str = 'test logger') -> logging.Logger:
     formatter = logging.Formatter('%(asctime)s - %(levelname)s: %(message)s')
     # add formatter to ch
     ch.setFormatter(formatter)
-    # add ch to loger
-    logger.addHandler(ch)
-    return logger
+    # add ch to logger
+    _logger.addHandler(ch)
+    return _logger
 
 
 def log_info(msg: str):
@@ -115,14 +115,7 @@ def clear_data_in_db() -> None:
     repo.clear_incartjobs()
 
 
-if __name__ == "__main__":
-    # обязательная инициализация
-    logger = create_logger()
-    init()
-    dal.connect()
-    # подготовить данные
-    clear_data_in_db()
-    set_mail_unread()
+def old_main() -> None:
     # jobid_queue = load_queue_from_db()
 
     # Проверка цикла работы задания
@@ -131,3 +124,17 @@ if __name__ == "__main__":
 
     # запустить полный цикл обработки
     # tl.start(block=True)
+
+
+if __name__ == "__main__":
+    # Обязательная инициализация
+    logger = create_logger()
+    init()
+    dal.connect()
+    # подготовить данные
+    clear_data_in_db()
+    set_mail_unread()
+    # Проверка цикла работы задания
+    check_new_email()
+    ob_id: str = jobid_queue.get()
+    print(f'{ob_id=}')
