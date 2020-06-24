@@ -1,7 +1,6 @@
 from __future__ import print_function
 import base64
 import email
-import logging
 import mimetypes
 import pickle
 import os.path
@@ -27,8 +26,8 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.modify',
 
 def get_message(service, user_id, msg_id):
     try:
-        message = service.users().messages().get(userId=user_id, id=msg_id).execute()
-        return message
+        _message = service.users().messages().get(userId=user_id, id=msg_id).execute()
+        return _message
     except errors.HttpError as ex:
         print(f'An error occurred: \"{ex}\"')
         return None
@@ -36,9 +35,9 @@ def get_message(service, user_id, msg_id):
 
 def get_mime_message(service, user_id, msg_id):
     try:
-        message = service.users().messages().get(userId=user_id, id=msg_id, format='raw').execute()
-        print(f'{message["snippet"]}')
-        msg_str = base64.urlsafe_b64decode(message['raw'].encode('utf-8')).decode("utf-8")
+        _message = service.users().messages().get(userId=user_id, id=msg_id, format='raw').execute()
+        print(f'{_message["snippet"]}')
+        msg_str = base64.urlsafe_b64decode(_message['raw'].encode('utf-8')).decode("utf-8")
         mime_msg = email.message_from_string(msg_str)
         return mime_msg
     except errors.HttpError as exc:
@@ -47,8 +46,8 @@ def get_mime_message(service, user_id, msg_id):
 
 def get_attachments(service, user_id, msg_id, store_dir):
     try:
-        message = service.users().messages().get(userId=user_id, id=msg_id).execute()
-        for part in message['payload']['parts']:
+        _message = service.users().messages().get(userId=user_id, id=msg_id).execute()
+        for part in _message['payload']['parts']:
             if part['filename']:
                 body = part['body']
                 file_data = base64.urlsafe_b64decode(body['attachmentId'])
@@ -62,8 +61,8 @@ def get_attachments(service, user_id, msg_id, store_dir):
 
 def modify_message(service, user_id, msg_id, msg_labels):
   try:
-    message = service.users().messages().modify(userId=user_id, id=msg_id,  body=msg_labels).execute()
-    return message
+    _message = service.users().messages().modify(userId=user_id, id=msg_id,  body=msg_labels).execute()
+    return _message
   except errors.HttpError as exc:
     print(f'An error occurred: {exc}')
 
@@ -95,8 +94,8 @@ def get_all_unread_emails(service) -> List[object]:
     result = list()
     results = service.users().messages().list(userId='me', labelIds=['INBOX', 'UNREAD']).execute()
     messages = results.get('messages', [])
-    for message in messages:
-        msg = get_message(service, user_id='me', msg_id=message['id'])
+    for _message in messages:
+        msg = get_message(service, user_id='me', msg_id=_message['id'])
         if msg is not None:
             result.append(msg)
     return result
@@ -107,8 +106,8 @@ def get_all_income_emails(service) -> List[object]:
     # Call the Gmail API to fetch INBOX
     results = service.users().messages().list(userId='me', labelIds=['INBOX']).execute()
     messages = results.get('messages', [])
-    for message in messages:
-        msg = get_message(service, user_id='me', msg_id=message['id'])
+    for _message in messages:
+        msg = get_message(service, user_id='me', msg_id=_message['id'])
         result.append(msg)
     return result
 
@@ -118,7 +117,7 @@ def get_attach_mime(file):
     if content_type is None or encoding is not None:
         content_type = 'application/octet-stream'
     main_type, sub_type = content_type.split('/', 1)
-    if  main_type == 'text':
+    if main_type == 'text':
         fp = open(file, 'rb')
         msg = MIMEText(fp.read(), _subtype=sub_type)
         fp.close()
@@ -153,10 +152,10 @@ def create_mail(sender, to, subject, text: str) -> MIMEMultipart:
 def send_gmail(service, user_id, body: MIMEMultipart):
     encoded_data = base64.urlsafe_b64encode(body.as_bytes())
     raw = encoded_data.decode()
-    message = {'raw': raw}
+    _message = {'raw': raw}
     try:
-        message = (service.users().messages().send(userId=user_id, body=message).execute())
-        return message
+        _message = (service.users().messages().send(userId=user_id, body=_message).execute())
+        return _message
     except errors.HttpError as ex:
         print(f'An error occurred: \"{ex}\"')
 
