@@ -116,8 +116,6 @@ def clear_data_in_db() -> None:
 
 
 def old_main() -> None:
-    # jobid_queue = load_queue_from_db()
-
     # Проверка цикла работы задания
     check_new_email()
     check_job_queue()
@@ -136,5 +134,4 @@ if __name__ == "__main__":
     set_mail_unread()
     # Проверка цикла работы задания
     check_new_email()
-    ob_id: str = jobid_queue.get()
-    print(f'{ob_id=}')
+    check_job_queue()

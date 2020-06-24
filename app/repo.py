@@ -100,11 +100,11 @@ class Repo(object):
         return ok
 
     def get_job_candidate(self, job: IncartJob) -> Doctor:
-        # найти любого врача, к которым мы не обращались с этим заданием
-        doctors_id: List[int] = [x.doctor.id for x in job.jobdoctors]
-        candidate: Doctor = self.session.query(Doctor).\
-            filter(Doctor.id.notin_(doctors_id)).filter(Doctor.is_active).first()
-        return candidate
+            # найти любого врача, к которым мы не обращались с этим заданием
+            doctors_id: List[int] = [x.doctor.id for x in job.jobdoctors]
+            candidate: Doctor = self.session.query(Doctor).\
+                filter(Doctor.id.notin_(doctors_id)).filter(Doctor.is_active).first()
+            return candidate
 
     # get all unclosing jobs
     def get_unclosing_jobs(self) -> List[IncartJob]:
