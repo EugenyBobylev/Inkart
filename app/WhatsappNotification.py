@@ -1,22 +1,21 @@
 import configparser
 import logging
-from pathlib import Path
 import queue
+from datetime import timedelta
+from pathlib import Path
 from typing import List
 
 from timeloop import Timeloop
-from datetime import timedelta
 
 from app import IncartTask
-from app.IncartTask import Task
-from config import Config
 from app.GMailApi import get_service, get_all_unread_emails, modify_message
+from app.IncartTask import Task
 from app.model import IncartJob, dal
 from app.repo import Repo
 
 tl = Timeloop()
 jobid_queue = queue.Queue()
-logger = None
+logger: logging.Logger
 dal.connect()
 
 check_new_email_interval = 15  # интервал в сек. проверки электронной почты на появление нового задания
@@ -80,18 +79,26 @@ def load_queue_from_db() -> queue.Queue:
     return q
 
 
+def setup_log_handler(log_handler) -> None:
+    log_handler.setLevel(logging.INFO)
+    _formatter = logging.Formatter('%(asctime)s - %(levelname)s: %(message)s')
+    log_handler.setFormatter(_formatter)
+
+
 def create_logger() -> logging.Logger:
     _logger = logging.getLogger('мой логгер')
     _logger.setLevel(logging.INFO)
+
     # create console log handler
     ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-    # create formatter
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s: %(message)s')
-    # add formatter to ch
-    ch.setFormatter(formatter)
-    # add ch to logger
+    setup_log_handler(ch)
     _logger.addHandler(ch)
+
+    # create file log handler
+    log_fn = Path('..') / "incart.log"
+    fh = logging.FileHandler(log_fn, mode='w', encoding='utf-8', delay=False)
+    setup_log_handler(fh)
+    _logger.addHandler(fh)
     return _logger
 
 
@@ -116,12 +123,9 @@ def clear_data_in_db() -> None:
 
 
 def old_main() -> None:
-    # Проверка цикла работы задания
-    check_new_email()
-    check_job_queue()
-
     # запустить полный цикл обработки
     # tl.start(block=True)
+    pass
 
 
 if __name__ == "__main__":
