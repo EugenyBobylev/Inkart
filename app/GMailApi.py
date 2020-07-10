@@ -119,7 +119,7 @@ def get_attach_mime(file):
     main_type, sub_type = content_type.split('/', 1)
     if main_type == 'text':
         fp = open(file, 'rb')
-        msg = MIMEText(fp.read(), _subtype=sub_type)
+        msg = MIMEText(fp.read(), subtype=sub_type)
         fp.close()
     elif main_type == 'image':
         fp = open(file, 'rb')
@@ -160,6 +160,15 @@ def send_gmail(service, user_id, body: MIMEMultipart):
         print(f'An error occurred: \"{ex}\"')
 
 
+def dict_from_msg(msg_snippet: str):
+    _dict = {}
+    for kv in msg_snippet.split(';'):
+        idx = kv.index(':')
+        pair = (kv[0: idx], kv[idx+1: -1])
+        _dict[pair[0]] = pair[1]
+    return _dict
+
+
 if __name__ == '__main__':
     # send_to = 'beabooks@mail.ru'
     # subject = "Проверка отсылки письма с вложением или без вложения"
@@ -176,7 +185,16 @@ PS. Отправка письма возможно была сделана че�
     # mail_msg.attach(msg_image)
     # format = "%(asctime)s: %(message)s"
     # logging.basicConfig(format=format, level=logging.INFO, datefmt="%H:%M:%S")
-    # srv = get_service()
+    srv = get_service()
+    messages = get_all_unread_emails(srv)
+    for msg in messages:
+        # проверим, что реально получили message
+        if 'id' in msg and 'snippet' in msg:
+            msg_id = msg['id']
+            snippet = msg['snippet']
+            dct = dict_from_msg(snippet)
+            print(dct)
+
     # send_gmail(srv, 'me', mail_msg)
     # get_all_income_emails(srv)
 

@@ -111,7 +111,7 @@ def log_info(msg: str):
 def set_mail_unread():
     srv = get_service()
     labels = {"removeLabelIds": [], "addLabelIds": ['UNREAD']}
-    modify_message(srv, "me", '170c3a9ba451cd9e', labels)
+    modify_message(srv, "me", '1733014f3b7bea76', labels)
 
 
 # подготовить исходные данные (очистть БД)
