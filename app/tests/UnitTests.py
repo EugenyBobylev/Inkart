@@ -1,5 +1,6 @@
 import configparser
 import os
+import pathlib
 import unittest
 from typing import List
 from unittest.mock import patch, Mock
@@ -8,6 +9,7 @@ import datetime
 from sqlalchemy import orm
 
 from app import IncartTask
+from app.GMailApi import get_service
 from app.IncartDateTime import get_today, get_today_night_start, get_tomorrow_night_finish, add_minutes, round_datetime, \
     get_local_timezone, get_delay_time, get_wait_time, to_local_datetime, replace_timezone
 from app.WhatsappChanel import get_api_message
@@ -154,7 +156,7 @@ class TestsApp(unittest.TestCase):
         local_tz = get_local_timezone()
         now = datetime.datetime.now()
         timezone_name = local_tz.tzname(now)
-        self.assertEqual(timezone_name, 'UTC+10:00')
+        self.assertEqual(timezone_name, 'UTC+03:00:00.000001')
 
     @patch('app.IncartDateTime.get_night_start')
     @patch('app.IncartDateTime.get_night_finish')
@@ -423,6 +425,26 @@ class RepoTests(unittest.TestCase):
         jobs: List[IncartJob] = repo.get_unclosing_jobs()
         all_jobs = dal.session.query(IncartJob).all()
         self.assertTrue(len(jobs), len(all_jobs))
+
+
+class GmailTests(unittest.TestCase):
+    def test_config_base_path(self):
+        path = Config.BASEPATH
+        self.assertEqual('/home/bobylev/PycharmProjects/Inkart', path)
+
+    def test_config_apppath(self):
+        app_path = Config.APPPATH
+        ok = os.path.exists(app_path)
+        self.assertTrue(ok)
+
+    def test_exists_credientials_json(self):
+        fn = Config.APPPATH + '/credentials.json'
+        ok = os.path.exists(fn)
+        self.assertTrue(ok)
+
+    def test_get_service(self):
+        srv = get_service()
+        self.assertIsNotNone(srv)
 
 
 # подготовка тестовой БД
