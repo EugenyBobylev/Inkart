@@ -1,3 +1,7 @@
+import json
+
+import requests
+
 from app.GMailApi import get_service, get_all_unread_emails, modify_message
 import app.WhatsappChanel
 
@@ -79,6 +83,21 @@ def print_dict(dct):
         print(item)
 
 
+def send_result():
+    """sent processing result"""
+    url = "http://holtershop.ru/local/backend/exchange.php"
+    body = {"order_id": 605, "file": "http://holtershop.ru/upload/iblock/50d/50dd7e8f07580ac5eb6cb40389fd7a67.pdf",
+            "report": "", "enc_error": ""}
+    payload = json.dumps(body)
+    headers = {
+        'Content-Type': 'application/json',
+        'charset': 'UTF-8'
+    }
+    response = requests.request("POST", url, headers=headers, data=payload.encode('utf-8'))
+    print(response.status_code)
+
+
 if __name__ == '__main__':
+    send_result()
     # check_gmail()
-    check_whatsapp()
+    # check_whatsapp()
