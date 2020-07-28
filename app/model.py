@@ -61,25 +61,11 @@ class IncartJob(Base, DataDict):
     doctor_id = Column("doctor_id", Integer)  # исполнитель
     closed = Column("closed", DateTime)    # метка времени UTC закрытия задания
 
-    info_type = Column("info_type", String(64))
-    pat_id = Column("pat_id", String(64))  # id пациента
-    id_inw = Column("id_inw", Integer)  # id исследования
-    start_dt = Column("start_dt", String(32))  # Локальное время запуска прибора в формате 2009-06-15T13:45:30
-    rec_len = Column("rec_len", Integer) # Длина полученной записи в записи в секундах
-    good_len = Column("good_len", Integer)  # Длина пригодной для анализа части в секундах
-    signals = Column("signals", String(128))  # Признаки наличия данных влияющие на цену ["ECG" "Press" "Breath" "Stim"]
-    len_type = Column("len_type", Integer)  # округленная длина в сутках части подлежащей анализу - влияет на цену
-    desc_text = Column("desc_text", String(512))  # Текст описывающий запись. Прим.: Запись 12 отведений ЭКГ и давления
-    concl_parts = Column("concl_parts", String(128))  # разделы вошедшие в заключение   "Epicrisis": "Эпикриз текстом" [ "General" "Arithm" "AD" ".." ]
-    state = Column("state", String(64))  # Done/Warnings/Error всё что хотелось можно проанализировать (Прим.: нет измерений давления в должном колличестве/Нечего анализировать)
-    state_changed = Column("state_changed", DateTime)  # Время завершения процедуры предобработки
-    state_info = Column("state_info", String(512))  # Текст описывающий проблему в данных определяемую автоматически. Прим.: запись слишком короткая
-    сomm = Column("comment", String(512))  # комментарий
-    worker_info = Column("worker_info", String(512))  # Сигнатура программы предобработки  { "Worker": "progName", "WorkerVer": "proVer", "Comment": "..." }
-    link_analyze = Column("link_analyze", String(128))  # ссылка позволяющая открыть сессию анализа
-    link_continue = Column("link_continue", String(128))  # ссылка позволяющая открыть сессию анализа с результатом
-    link_view = Column("link_view", String(128))  # ссылка позволяющая открыть визуализатор заключения
-    link_pdf = Column("link_pdf", String(128))  # ссылка на скачивание PDF
+    order_id = Column("order_id", Integer)  # код заказа
+    file_encrypt = Column("file_encrypt", String(128))  # ссылка на файл для отправки на расшифровку
+    file_decrypt = Column("file_decrypt", String(128))  # ссылка на результат расшифровки
+    report = Column("report", String(128))  # какой-то не понятный отчет
+    enc_error = Column("enc_error", String(128))  # ошибка расшифровки
 
     jobdoctors = relationship("JobDoctor", lazy='select')
 
