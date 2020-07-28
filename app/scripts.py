@@ -97,7 +97,27 @@ def send_result():
     print(response.status_code)
 
 
+def parse_mail_message(message) -> dict:
+    """parse body gmail message (snippet)"""
+    items = message.split(';')
+    items = [item for item in items]
+    _dct = {}
+    for item in items:
+        idx = item.find(':')
+        key = item[0:idx]
+        value = item[idx+1:]
+        _dct[key] = value
+    if 'order_id' in _dct:
+        _dct['order_id'] = int(_dct['order_id'])
+    return _dct
+
+
 if __name__ == '__main__':
-    send_result()
+    # set_mail_unread()
+    gmail_messages = get_unread_mails()
+    msg = gmail_messages[0]['snippet']
+    result = parse_mail_message(msg)
+    print(result)
+    # send_result()
     # check_gmail()
     # check_whatsapp()

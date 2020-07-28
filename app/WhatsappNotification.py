@@ -137,5 +137,5 @@ if __name__ == "__main__":
     clear_data_in_db()
     set_mail_unread()
     # Проверка цикла работы задания
-    # check_new_email()
-    # check_job_queue()
+    check_new_email()
+    check_job_queue()
