@@ -8,6 +8,7 @@ from queue import Queue
 from typing import List, Dict
 
 from dateutil import parser
+from requests import request
 
 from app.IncartDateTime import get_wait_time, get_delay_time
 from app.WhatsappChanel import post_api_message, get_api_messages
@@ -80,7 +81,10 @@ class Task(threading.Thread):
         # доктор подтвердил выполнение задания
         job.closed = datetime.now().astimezone(timezone.utc)
         self.update_job(job)
-        self.send_success(jobdoctor)  # послать подтверждение выполнения
+        if job.file_decrypt:
+            self.send_success(jobdoctor)  # послать подтверждение выполнения
+        else:
+            self.send_error(jobdoctor)  # послать сообщение
 
     # перекратить обработку задания, отослать кандитату или исполнителю отказ
     def stop_job(self, jobdoctor: JobDoctor):
@@ -193,11 +197,11 @@ class Task(threading.Thread):
             last_msg = ChatMessage.from_json(data[-1])
             msg_date: datetime = parser.parse(last_msg.created)
             if jobdoctor.job_started < msg_date < jobdoctor.job_time_estimate:
-                urls = find_url_links(last_msg['text'])
+                urls = find_url_links(last_msg.text)
                 if len(urls) > 0:
                     jobdoctor.job.file_decrypt = urls[0]
                 else:
-                    jobdoctor.job.enc_error = last_msg['text']
+                    jobdoctor.job.enc_error = last_msg.text
                 jobdoctor.job_finish_id = last_msg.id
                 jobdoctor.job_finished = parser.parse(last_msg.created)  # Это строка
                 self.update_jobdoctor(jobdoctor)
@@ -236,6 +240,26 @@ class Task(threading.Thread):
         self.log_info("run: send_success")
         msg = "Подтверждаем выполнение заказа"
         post_api_message(jobdoctor.doctor_id, msg)
+
+    # послать подтверждение по whatsapp
+    def send_error(self, jobdoctor):
+        self.log_info("run: send_success")
+        msg = "Спасибо. Заказ не был выполнен (возможно из за ошибок) и будет направлен администратору для првоерки."
+        post_api_message(jobdoctor.doctor_id, msg)
+        pass
+
+    # отослать результат обработки задания
+    def send_result(self, job: IncartJob):
+        """sent processing result"""
+        url = "http://holtershop.ru/local/backend/exchange.php"
+        body = {"order_id": job.order_id, "file": job.file_decrypt, "report": job.report, "enc_error": job.file_encrypt}
+        payload = json.dumps(body)
+        headers = {
+            'Content-Type': 'application/json',
+            'charset': 'UTF-8'
+        }
+        response = request("POST", url, headers=headers, data=payload.encode('utf-8'))
+        self.log_info(f'send_result: ststus_code ={response.status_code}')
 
     # Выполнить инициализацию глобальных переменных
     @staticmethod
