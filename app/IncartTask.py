@@ -155,7 +155,8 @@ class Task(threading.Thread):
         self.log_info("run: send_job")
         start = datetime.now()
         finish = get_wait_time(start, wait=Task.job_time_estimate)
-        msg = "Скачайте задание <тут адрес>\n" \
+        link = jobdoctor.job.file_encrypt
+        msg = f"Скачайте задание {link}\n" \
               f"Ждем результат  {finish}."
         result = post_api_message(jobdoctor.doctor_id, msg)
         status = result["status"]

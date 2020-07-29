@@ -56,7 +56,7 @@ class IncartJob(Base, DataDict):
 
     id = Column("id", String(16), primary_key=True)
     snippet = Column("snippet", String(512))  # текст сообщения
-    created = Column("created", DateTime, default=datetime.now().astimezone(timezone.utc))     # когда задание создано UTC
+    created = Column("created", DateTime, default=datetime.now().astimezone(timezone.utc))  # когда задание создано UTC
     restart = Column("restart", DateTime)  # метка времени с которой задача может начать обрабоатываться
     doctor_id = Column("doctor_id", Integer)  # исполнитель
     closed = Column("closed", DateTime)    # метка времени UTC закрытия задания
@@ -87,7 +87,7 @@ class JobDoctor(Base):
 
     job_start_id = Column("job_start_id", Integer)  # id whatsapp message отправленного доктору с заданием нарасшифровку
     job_started = Column("job_started", DateTime)  # время отправки
-    job_time_estimate = Column("job_time_estimate", Integer) # Ожидаемое время окончания расшифровки
+    job_time_estimate = Column("job_time_estimate", Integer)  # Ожидаемое время окончания расшифровки
     job_finish_id = Column("job_finish_id", Integer)  # id whatsapp message с подтверждением окончания расшифровки
     job_finished = Column("job_finished", DateTime)  # время получения сообщения об окончании расшифровки
 
@@ -97,7 +97,8 @@ class JobDoctor(Base):
     def __repr__(self):
         return f'job_id={self.job_id}; doctor_id="{self.doctor_id}"; request_id={self.request_id}; ' \
                f'request_started={self.request_started}; request_time_estimate={self.request_time_estimate}; ' \
-               f'request_answer_id={self.request_answer_id}; answered={self.answered}; job_start_id={self.job_start_id}; ' \
+               f'request_answer_id={self.request_answer_id}; answered={self.answered}; ' \
+               f'job_start_id={self.job_start_id}; ' \
                f' job_started={self.job_started}; job_time_estimate={self.job_time_estimate}; ' \
                f'job_finish_id={self.job_finish_id}; job_finished={self.job_finished}'
 
@@ -136,7 +137,7 @@ class GmailMessage(DataDict):
     snippet: str
 
     def __init__(self):
-        self.id = 0
+        self.id = '0'
         self.trhreadId = ''
         self.labelIds = []
         self.snippet = ''

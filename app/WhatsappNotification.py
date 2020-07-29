@@ -47,7 +47,8 @@ def check_new_email():
         with dal.session_scope() as session:
             repo = Repo(session)
             for message in new_messages:
-                job = IncartJob.from_json(message)
+                dct = parse_mail_message(message)
+                job = IncartJob.from_json(dct)
                 ok: bool = repo.add_incartjob(job)
                 if ok:
                     log_info(f"job added to db {job}")
@@ -65,6 +66,23 @@ def check_job_queue():
         job_id: str = jobid_queue.get()
         task = Task(job_id=job_id, queue=jobid_queue, logger=logger)
         task.start()
+
+
+def parse_mail_message(message) -> dict:
+    """parse body gmail message (snippet)"""
+    _dct = {'id': message['id'], 'snippet': message['snippet']}
+    items = message['snippet'].split(';')
+    items = [item for item in items]
+    # _dct['id'] = message['id']
+    # _dct['snippet'] = message['snippet']
+    for item in items:
+        idx = item.find(':')
+        key = item[0:idx]
+        value = item[idx+1:]
+        _dct[key] = value
+    if 'order_id' in _dct:
+        _dct['order_id'] = int(_dct['order_id'])
+    return _dct
 
 
 # загрузить очередь заданий из БД

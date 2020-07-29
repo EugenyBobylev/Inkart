@@ -4,7 +4,7 @@ import requests
 
 from app.GMailApi import get_service, get_all_unread_emails, modify_message
 import app.WhatsappChanel
-
+from app.WhatsappNotification import parse_mail_message
 
 BOBYLEV = 96881373
 
@@ -67,7 +67,7 @@ def send_whatsapp_message(message: str):
 
 def get_whatsapp_client_messages(client_id=BOBYLEV):
     """Messages sent by client"""
-    messages_info = app.WhatsappChanel.get_api_messages(BOBYLEV)
+    messages_info = app.WhatsappChanel.get_api_messages(client_id)
     return messages_info['data']
 
 
@@ -97,25 +97,11 @@ def send_result():
     print(response.status_code)
 
 
-def parse_mail_message(message) -> dict:
-    """parse body gmail message (snippet)"""
-    items = message.split(';')
-    items = [item for item in items]
-    _dct = {}
-    for item in items:
-        idx = item.find(':')
-        key = item[0:idx]
-        value = item[idx+1:]
-        _dct[key] = value
-    if 'order_id' in _dct:
-        _dct['order_id'] = int(_dct['order_id'])
-    return _dct
-
-
 if __name__ == '__main__':
     # set_mail_unread()
     gmail_messages = get_unread_mails()
-    msg = gmail_messages[0]['snippet']
+    msg = gmail_messages[0]
+    print(msg)
     result = parse_mail_message(msg)
     print(result)
     # send_result()
