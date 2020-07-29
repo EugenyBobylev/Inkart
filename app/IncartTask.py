@@ -1,4 +1,5 @@
 import configparser
+import json
 import re
 import threading
 import time
@@ -85,6 +86,7 @@ class Task(threading.Thread):
             self.send_success(jobdoctor)  # послать подтверждение выполнения
         else:
             self.send_error(jobdoctor)  # послать сообщение
+        self.send_result(job)
 
     # перекратить обработку задания, отослать кандитату или исполнителю отказ
     def stop_job(self, jobdoctor: JobDoctor):
@@ -259,6 +261,7 @@ class Task(threading.Thread):
             'charset': 'UTF-8'
         }
         response = request("POST", url, headers=headers, data=payload.encode('utf-8'))
+        self.log_info(f'send_result: {body}')
         self.log_info(f'send_result: ststus_code ={response.status_code}')
 
     # Выполнить инициализацию глобальных переменных
