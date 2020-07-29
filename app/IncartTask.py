@@ -1,4 +1,5 @@
 import configparser
+import re
 import threading
 import time
 from datetime import timedelta, datetime, timezone
@@ -12,6 +13,15 @@ from app.IncartDateTime import get_wait_time, get_delay_time
 from app.WhatsappChanel import post_api_message, get_api_messages
 from app.model import DataAccessLayer, IncartJob, JobDoctor, Doctor, ChatMessage
 from app.repo import Repo
+
+
+# найти все url в переданной строке
+def find_url_links(txt) -> List:
+    """Find all url links in input string"""
+    regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|" \
+            r"(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
+    url = re.findall(regex, txt)
+    return [x[0] for x in url]
 
 
 class Task(threading.Thread):
@@ -183,6 +193,11 @@ class Task(threading.Thread):
             last_msg = ChatMessage.from_json(data[-1])
             msg_date: datetime = parser.parse(last_msg.created)
             if jobdoctor.job_started < msg_date < jobdoctor.job_time_estimate:
+                urls = find_url_links(last_msg['text'])
+                if len(urls) > 0:
+                    jobdoctor.job.file_decrypt = urls[0]
+                else:
+                    jobdoctor.job.enc_error = last_msg['text']
                 jobdoctor.job_finish_id = last_msg.id
                 jobdoctor.job_finished = parser.parse(last_msg.created)  # Это строка
                 self.update_jobdoctor(jobdoctor)

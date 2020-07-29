@@ -70,8 +70,9 @@ class IncartJob(Base, DataDict):
     jobdoctors = relationship("JobDoctor", lazy='select')
 
     def __repr__(self):
-        return f'id={self.id}; snippet="{self.snippet}"; created={self.created}; doctor_id={self.doctor_id}; ' \
-               f'closed={self.closed}'
+        return f'id={self.id}; created={self.created}; doctor_id={self.doctor_id}; closed={self.closed}; ' \
+               f'file_encrypt={self.file_encrypt}; file_decrypt={self.file_decrypt}; report={self.report}; ' \
+               f'enc_error={self.enc_error}'
 
 
 class JobDoctor(Base):

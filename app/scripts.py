@@ -1,10 +1,12 @@
 import json
-
 import requests
 
 from app.GMailApi import get_service, get_all_unread_emails, modify_message
 import app.WhatsappChanel
+from app.IncartTask import find_url_links
 from app.WhatsappNotification import parse_mail_message
+from app.model import dal
+from app.repo import Repo
 
 BOBYLEV = 96881373
 
@@ -97,13 +99,44 @@ def send_result():
     print(response.status_code)
 
 
-if __name__ == '__main__':
+def parse_gmail_message():
     # set_mail_unread()
     gmail_messages = get_unread_mails()
     msg = gmail_messages[0]
     print(msg)
     result = parse_mail_message(msg)
     print(result)
+
+
+def db_get_incartjob():
+    job_id = '1733014f3b7bea76'
+    with dal.session_scope() as session:
+        repo = Repo(session)
+        _task = repo.get_incartjob(job_id)
+        print(_task)
+
+
+def test_find_url_links():
+    text = 'My Profile: https://auth.geeksforgeeks.org/user/Chinmoy%20Lenka/articles ' \
+           'in the portal of http://www.geeksforgeeks.org/'
+    links = find_url_links(text)
+    print(links)
+
+
+def parse_whatsapp_msg():
+    """parse doctor's whatsapp report"""
+    _messages = get_whatsapp_client_messages()
+    msg = _messages[-1]
+    _links = find_url_links(msg['text'])
+    ok = len(_links)
+    print(msg["text"] + f' - это {"" if ok else " не"} ссылка')
+
+
+if __name__ == '__main__':
+    parse_whatsapp_msg()
+    # test_find_url_links()
+    # db_get_incartjob()
+    # parse_gmail_message()
     # send_result()
     # check_gmail()
     # check_whatsapp()

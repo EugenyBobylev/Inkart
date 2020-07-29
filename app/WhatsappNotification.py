@@ -73,8 +73,6 @@ def parse_mail_message(message) -> dict:
     _dct = {'id': message['id'], 'snippet': message['snippet']}
     items = message['snippet'].split(';')
     items = [item for item in items]
-    # _dct['id'] = message['id']
-    # _dct['snippet'] = message['snippet']
     for item in items:
         idx = item.find(':')
         key = item[0:idx]
